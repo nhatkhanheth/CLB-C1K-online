@@ -178,6 +178,16 @@ main{margin-left:230px;flex:1;padding:24px 28px;padding-top:62px;max-width:1180p
 .stat:hover{border-color:var(--bord-2)}
 .stat-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .sl{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.vault-kicker{
+  display:block;
+  font-size:9px;
+  line-height:1.1;
+  opacity:.42;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  font-weight:800;
+  margin-bottom:3px;
+}
 .stat-ic{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:var(--surf-2);color:var(--txt-3)}
 .stat-ic svg{width:13px;height:13px;stroke-width:2.2}
 .sv{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;letter-spacing:-.01em;color:var(--txt)}
@@ -328,6 +338,57 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .rec-card:hover{border-color:var(--bord-2)}
 .rec-title{font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;flex-wrap:wrap;color:var(--txt)}
 .rec-sub{font-size:11px;color:var(--mut);margin-top:3px}
+.rec-breakdown-sub{font-size:11px;color:var(--txt-3);line-height:1.5;margin-top:5px}
+.rec-cost-builder{
+  display:grid;
+  gap:10px;
+  border:1px solid rgba(247,147,26,.16);
+  background:rgba(247,147,26,.035);
+  border-radius:16px;
+  padding:12px;
+}
+.rec-extra-list{display:grid;gap:8px}
+.rec-extra-row{
+  display:grid;
+  grid-template-columns:minmax(0,1.4fr) minmax(110px,.8fr) 34px;
+  gap:8px;
+  align-items:end;
+}
+.rec-extra-row input{min-width:0}
+.rec-extra-remove{width:34px;height:34px;padding:0;border-radius:12px}
+.rec-add-extra-btn{justify-self:start}
+.rec-total-preview{
+  border:1px solid rgba(247,147,26,.24);
+  background:rgba(247,147,26,.09);
+  color:#ffd28a;
+  border-radius:14px;
+  padding:10px 12px;
+  font-size:12.5px;
+  font-weight:900;
+}
+.breakdown-list{
+  display:grid;
+  gap:8px;
+  margin:12px 0;
+}
+.breakdown-row{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;
+  background:rgba(255,255,255,.035);
+  padding:9px 10px;
+}
+.breakdown-row.total{
+  border-color:rgba(247,147,26,.22);
+  background:rgba(247,147,26,.08);
+  color:#ffd28a;
+  font-weight:900;
+}
+.breakdown-amount{font-family:'JetBrains Mono',monospace;font-weight:900;white-space:nowrap}
+.hist-actions{display:flex;gap:6px;justify-content:flex-end;align-items:center}
 
 /* ─── LEADERBOARD ─── */
 .lb-section{margin-bottom:18px}
@@ -1905,12 +1966,14 @@ nav.sidebar a.nav-link *{pointer-events:none}
   display:inline-flex;
   align-items:center;
   max-width:100%;
-  overflow:hidden;
+  overflow:visible;
   text-overflow:ellipsis;
   white-space:nowrap;
   font-weight:900;
   letter-spacing:.01em;
-  line-height:1;
+  line-height:1.25;
+  padding-top:2px;
+  padding-bottom:2px;
 }
 .fund-label-wrap{
   display:inline-flex;
@@ -1918,7 +1981,7 @@ nav.sidebar a.nav-link *{pointer-events:none}
   gap:6px;
   max-width:100%;
   vertical-align:middle;
-  line-height:1;
+  line-height:1.25;
 }
 .fund-name.team-fund{color:#ffbf75}
 .fund-name.birthday-fund{color:#ffc3d9}
@@ -2004,6 +2067,8 @@ nav.sidebar a.nav-link *{pointer-events:none}
   .gift-submit{width:100%;min-height:42px}
   .gift-feed-row{align-items:flex-start;flex-direction:column;padding:8px 9px}
   .gift-feed-meta{width:100%;justify-content:space-between}
+  .rec-extra-row{grid-template-columns:1fr 1fr 34px}
+  .rec-cost-builder{padding:10px}
   #stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   .fund-label-wrap{gap:5px;flex-wrap:wrap}
   .fund-name{max-width:150px}
@@ -2226,7 +2291,7 @@ nav.sidebar a.nav-link *{pointer-events:none}
       <div class="fg mb12">
         <div><label id="amt-label">Tổng tiền (VND)</label>
           <div class="input-k">
-            <input type="number" id="sess-amt" placeholder="500 = 500,000₫" step="1000" oninput="calcPP()">
+            <input type="number" id="sess-amt" placeholder="500 = 500,000₫" step="1000" oninput="markManualMoneyInput('sess-amt');calcPP()">
             <button type="button" onclick="applyK('sess-amt',calcPP)" class="btn-k">÷k</button>
           </div>
         </div>
@@ -2454,19 +2519,34 @@ nav.sidebar a.nav-link *{pointer-events:none}
       </div>
       <input type="hidden" id="rec-mode" value="fixed">
     </div>
-    <div class="fg mb12">
-      <div><label id="rec-amt-label">Số tiền mỗi người</label>
+    <div class="rec-cost-builder mb12">
+      <div>
+        <label id="rec-amt-label">Chi phí chính</label>
         <div class="input-k">
-          <input type="number" id="rec-amt" placeholder="50 = 50,000₫" step="1000">
-          <button type="button" onclick="applyK('rec-amt')" class="btn-k">÷k</button>
+          <input type="number" id="rec-base-amt" placeholder="300 = 300,000₫" step="1000" oninput="updateRecTotalPreview()">
+          <button type="button" onclick="applyK('rec-base-amt',updateRecTotalPreview)" class="btn-k">÷k</button>
         </div>
       </div>
-      <div><label>Thành viên mặc định</label><div class="chips mt8" id="rec-chips"></div></div>
+      <div class="rec-extra-list" id="rec-extra-list"></div>
+      <button type="button" class="btn bg btn-sm rec-add-extra-btn" onclick="addRecExtraRow()"><i data-lucide="plus"></i> Thêm chi phí</button>
+      <div class="rec-total-preview" id="rec-total-preview">Tổng template: 0₫</div>
+    </div>
+    <div class="mb12">
+      <label>Thành viên mặc định</label><div class="chips mt8" id="rec-chips"></div>
     </div>
     <div class="fl g8 mt12">
       <button class="btn bp" onclick="saveRec()" style="flex:1"><i data-lucide="save"></i> Lưu</button>
       <button class="btn bg" onclick="closeOv('ov-rec')">Hủy</button>
     </div>
+  </div>
+</div>
+
+<div class="ov" id="ov-breakdown">
+  <div class="modal">
+    <div class="sheet-handle"></div>
+    <button class="modal-close" onclick="closeOv('ov-breakdown')"><i data-lucide="x"></i></button>
+    <div class="mt"><i data-lucide="receipt-text"></i>Chi tiết chi phí</div>
+    <div id="breakdown-content"></div>
   </div>
 </div>
 
@@ -2591,13 +2671,14 @@ const BIRTHDAY_GIFTS = [
 let selectedBirthdayGiftId = 'rose';
 let giftPinContext = null;
 let birthdayGiftFeedExpanded = false;
+let appliedRecurringContext = null;
 
 // ═══════════════════════════════════════════════════════════════
 // UTILS
 // ═══════════════════════════════════════════════════════════════
 function fmt(n){ return (n||0).toLocaleString('vi-VN')+'₫'; }
 function kVal(id){ return (parseFloat(document.getElementById(id).value)||0)*1000; }
-function applyK(id,cb){ const el=document.getElementById(id); el.value=(parseFloat(el.value)||0)/1000; if(cb)cb(); }
+function applyK(id,cb){ const el=document.getElementById(id); if(!el) return; el.value=(parseFloat(el.value)||0)/1000; markManualMoneyInput(id); if(cb)cb(); }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function td(){ return new Date().toISOString().split('T')[0]; }
 function escapeHTML(s){return (s||'').toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
@@ -2620,6 +2701,65 @@ function renderAppName(){
   document.title=appName+' — Quản lý chi tiêu';
   const appleTitle=document.querySelector('meta[name="apple-mobile-web-app-title"]');
   if(appleTitle) appleTitle.setAttribute('content',appName);
+}
+function getMemberDisplayLabel(m){
+  if(!m) return '';
+  if(m.id===FUND_ID) return 'Team';
+  if(typeof BIRTHDAY_FUND_ID!=='undefined'&&m.id===BIRTHDAY_FUND_ID) return 'Birthday';
+  return m.name||'';
+}
+function recurringTotal(baseAmount,extraItems){
+  return (Number(baseAmount)||0)+(extraItems||[]).reduce((s,x)=>s+(Number(x.amount)||0),0);
+}
+function normalizeRecurring(r){
+  const baseAmount=Number(r?.baseAmount??r?.amount??0)||0;
+  const extraItems=Array.isArray(r?.extraItems)?r.extraItems:[];
+  const cleanExtras=extraItems.map(x=>({
+    id:x.id||uid(),
+    note:(x.note||'').trim(),
+    amount:Number(x.amount||0)||0
+  })).filter(x=>x.amount>0||x.note);
+  const amount=recurringTotal(baseAmount,cleanExtras);
+  return {...(r||{}),baseAmount,extraItems:cleanExtras,amount};
+}
+function formatBreakdownText(breakdown){
+  if(!breakdown) return '';
+  const parts=[`Chi phí chính: ${fmt(breakdown.baseAmount||0)}`];
+  (breakdown.extraItems||[]).forEach(x=>parts.push(`${x.note||'Phụ phí'}: ${fmt(x.amount||0)}`));
+  return parts.join('; ');
+}
+function readSessionAmount(){
+  const el=document.getElementById('sess-amt');
+  const raw=parseFloat(el?.value)||0;
+  if(el?.dataset.vnd==='1') return raw;
+  return raw*1000;
+}
+function setSessionAmountFromVND(amount){
+  const el=document.getElementById('sess-amt');
+  if(!el) return;
+  el.value=Number(amount||0);
+  el.dataset.vnd='1';
+}
+function markManualMoneyInput(id){
+  const el=document.getElementById(id);
+  if(!el) return;
+  delete el.dataset.vnd;
+  if(id==='sess-amt'){
+    appliedRecurringContext=null;
+    const recPick=document.getElementById('rec-pick');
+    if(recPick) recPick.value='';
+  }
+}
+function makeRecurringBreakdown(r){
+  const n=normalizeRecurring(r);
+  return {
+    baseAmount:n.baseAmount,
+    extraItems:n.extraItems.map(x=>({id:x.id,note:x.note,amount:x.amount})),
+    totalAmount:n.amount
+  };
+}
+function hasBreakdown(t){
+  return !!(t&&t.breakdown&&((t.breakdown.baseAmount||0)>0||(t.breakdown.extraItems||[]).length));
 }
 
 function parseBirthday(str){
@@ -2671,7 +2811,7 @@ function formatBirthdayShort(birthday){
   return b?`${String(b.day).padStart(2,'0')}/${String(b.month).padStart(2,'0')}`:'';
 }
 function renderMemberName(m){
-  const name=escapeHTML((m&&m.name)||'?');
+  const name=escapeHTML(getMemberDisplayLabel(m)||'?');
   if(m&&m.isFixed) return `<span class="fund-name ${m.isBirthdayFund?'birthday-fund':'team-fund'}">${name}</span>`;
   const birthday=m&&m.birthday;
   const b=parseBirthday(birthday);
@@ -2703,7 +2843,7 @@ function getCurrentYm(date=new Date()){
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
 }
 function getMemberById(id){ return S.members.find(m=>m.id===id); }
-function getMemberName(id){ return (getMemberById(id)||{}).name||'?'; }
+function getMemberName(id){ return getMemberDisplayLabel(getMemberById(id))||'?'; }
 function hasGiftPin(member){ return !!(member&&member.giftPinHash); }
 function validateGiftPin(pin){ return /^\d{4}$/.test((pin||'').trim()); }
 async function sha256(text){
@@ -3248,13 +3388,13 @@ function render(){
 
 function ensureFundMember(){
   if(!S.members.find(m=>m.id===FUND_ID))
-    S.members.unshift({id:FUND_ID,name:'QUỸ TEAM',balance:0,totalIn:0,totalOut:0,order:-2,isFixed:true});
-  else{const fm=S.members.find(m=>m.id===FUND_ID);fm.order=-2;fm.isFixed=true;fm.isBirthdayFund=false;}
+    S.members.unshift({id:FUND_ID,name:'Team',balance:0,totalIn:0,totalOut:0,order:-2,isFixed:true});
+  else{const fm=S.members.find(m=>m.id===FUND_ID);fm.name='Team';fm.order=-2;fm.isFixed=true;fm.isBirthdayFund=false;}
   const birthdayFund=S.members.find(m=>m.id===BIRTHDAY_FUND_ID);
   if(!birthdayFund){
-    S.members.unshift({id:BIRTHDAY_FUND_ID,name:'QUỸ SINH NHẬT',balance:0,totalIn:0,totalOut:0,order:-1,isFixed:true,isBirthdayFund:true});
+    S.members.unshift({id:BIRTHDAY_FUND_ID,name:'Birthday',balance:0,totalIn:0,totalOut:0,order:-1,isFixed:true,isBirthdayFund:true});
   }else{
-    birthdayFund.name='QUỸ SINH NHẬT';
+    birthdayFund.name='Birthday';
     birthdayFund.order=-1;
     birthdayFund.isFixed=true;
     birthdayFund.isBirthdayFund=true;
@@ -3381,11 +3521,11 @@ function renderDash(){
 
   document.getElementById('stat-grid').innerHTML=`
     <div class="stat">
-      <div class="stat-head"><div class="sl">Quỹ Team</div><div class="stat-ic" style="color:#ffbf75"><i data-lucide="badge-dollar-sign"></i></div></div>
+      <div class="stat-head"><div class="sl"><span class="vault-kicker">Vault</span>Team</div><div class="stat-ic" style="color:#ffbf75"><i data-lucide="badge-dollar-sign"></i></div></div>
       <div class="sv" data-val="${fundBal}" style="color:#ffbf75">${fmt(fundBal)}</div>
     </div>
     <div class="stat">
-      <div class="stat-head"><div class="sl">Quỹ sinh nhật</div><div class="stat-ic" style="color:#ffc3d9"><i data-lucide="gift"></i></div></div>
+      <div class="stat-head"><div class="sl"><span class="vault-kicker">Vault</span>Birthday</div><div class="stat-ic" style="color:#ffc3d9"><i data-lucide="gift"></i></div></div>
       <div class="sv" data-val="${birthdayFundBal}" style="color:#ffc3d9">${fmt(birthdayFundBal)}</div>
     </div>
     <div class="stat">
@@ -3486,8 +3626,8 @@ function renderMembersList(){
     }).join('')
     : '<tr><td colspan="5"><div class="empty"><i data-lucide="users"></i>Chưa có thành viên</div></td></tr>';
 }
-function renderTopupSel(){ const s=document.getElementById('topup-mem');const c=s.value;s.innerHTML=getSortedMembers().map(m=>`<option value="${m.id}">${escapeHTML(m.name)}</option>`).join('');if(c)s.value=c; }
-function renderQMem(){ const s=document.getElementById('q-mem');if(!s)return;const c=s.value;s.innerHTML=getSortedMembers().map(m=>`<option value="${m.id}">${escapeHTML(m.name)}</option>`).join('');if(c)s.value=c; }
+function renderTopupSel(){ const s=document.getElementById('topup-mem');const c=s.value;s.innerHTML=getSortedMembers().map(m=>`<option value="${m.id}">${escapeHTML(getMemberDisplayLabel(m))}</option>`).join('');if(c)s.value=c; }
+function renderQMem(){ const s=document.getElementById('q-mem');if(!s)return;const c=s.value;s.innerHTML=getSortedMembers().map(m=>`<option value="${m.id}">${escapeHTML(getMemberDisplayLabel(m))}</option>`).join('');if(c)s.value=c; }
 
 function renderChips(){
   const g=document.getElementById('sess-chips'); if(!g) return;
@@ -3496,7 +3636,7 @@ function renderChips(){
     ? members.map(m=>`<label class="chip" id="chip-${m.id}" onclick="toggleChip('${m.id}')"><input type="checkbox" id="ck-${m.id}"><span>${renderMemberName(m)}</span></label>`).join('')
     : '<span class="tm">Chưa có thành viên</span>';
   const pb=document.getElementById('paid-by-sel'); if(!pb) return;
-  pb.innerHTML='<option value="">— Tôi tự trả —</option>'+members.map(m=>`<option value="${m.id}">${escapeHTML(m.name)}</option>`).join('');
+  pb.innerHTML='<option value="">— Tôi tự trả —</option>'+members.map(m=>`<option value="${m.id}">${escapeHTML(getMemberDisplayLabel(m))}</option>`).join('');
 }
 function toggleChip(id){
   const ck=document.getElementById('ck-'+id);
@@ -3530,7 +3670,7 @@ function setSplitMode(m){
   calcPP();
 }
 function calcPP(){
-  const amt=kVal('sess-amt');
+  const amt=readSessionAmount();
   const n=getGiftableMembers().filter(m=>document.getElementById('ck-'+m.id)?.checked).length;
   const disp=document.getElementById('pp-display'),val=document.getElementById('pp-val');
   if(splitMode==='split'&&amt>0&&n>0){disp.style.display='block';val.textContent=fmt(Math.ceil(amt/n));}
@@ -3552,11 +3692,14 @@ function renderRecList(){
   const el=document.getElementById('rec-list'); if(!el) return;
   if(!S.recurring.length){el.innerHTML='<div class="empty"><i data-lucide="inbox"></i>Chưa có template</div>';refreshIcons();return;}
   el.innerHTML=S.recurring.map(r=>{
-    const mn=(r.defaultMembers||[]).map(id=>(S.members.find(x=>x.id===id)||{}).name||'?').join(', ');
+    const nr=normalizeRecurring(r);
+    const mn=(nr.defaultMembers||[]).map(id=>getMemberName(id)).join(', ');
+    const detail=nr.extraItems.length?`<div class="rec-breakdown-sub">Gồm: ${escapeHTML(formatBreakdownText({baseAmount:nr.baseAmount,extraItems:nr.extraItems}))}</div>`:'';
     return `<div class="rec-card">
       <div style="flex:1;min-width:0">
-        <div class="rec-title">${escapeHTML(r.name)} <span class="bdg dp">${escapeHTML(r.category)}</span></div>
-        <div class="rec-sub">${r.mode==='fixed'?'Mỗi người: '+fmt(r.amount):'Tổng: '+fmt(r.amount)} · ${escapeHTML(mn||'Không có mặc định')}</div>
+        <div class="rec-title">${escapeHTML(nr.name)} <span class="bdg dp">${escapeHTML(nr.category)}</span></div>
+        <div class="rec-sub">${nr.mode==='fixed'?'Mỗi người: '+fmt(nr.amount):'Tổng: '+fmt(nr.amount)} · ${escapeHTML(mn||'Không có mặc định')}</div>
+        ${detail}
       </div>
       <div class="fl g8">
         <button class="btn bg btn-sm wo" onclick="editRec('${r.id}')"><i data-lucide="pencil"></i></button>
@@ -3568,21 +3711,24 @@ function renderRecList(){
 }
 function renderRecPick(){
   const s=document.getElementById('rec-pick'); if(!s) return;
-  s.innerHTML='<option value="">— Chọn template —</option>'+S.recurring.map(r=>`<option value="${r.id}">${escapeHTML(r.name)} (${escapeHTML(r.category)})</option>`).join('');
+  s.innerHTML='<option value="">— Chọn template —</option>'+S.recurring.map(r=>{const nr=normalizeRecurring(r);return `<option value="${nr.id}">${escapeHTML(nr.name)} (${escapeHTML(nr.category)})</option>`;}).join('');
   document.getElementById('rec-pick-row').style.display=S.recurring.length?'block':'none';
 }
-function applyRec(){ const id=document.getElementById('rec-pick').value;const r=S.recurring.find(x=>x.id===id);if(!r)return;applyRecDirect(r); }
+function applyRec(){ const id=document.getElementById('rec-pick').value;if(!id){appliedRecurringContext=null;return;}const r=S.recurring.find(x=>x.id===id);if(!r)return;applyRecDirect(r); }
 function applyRecDirect(r){
-  setSplitMode(r.mode);
-  document.getElementById('sess-amt').value=r.amount;
+  const nr=normalizeRecurring(r);
+  setSplitMode(nr.mode);
+  setSessionAmountFromVND(nr.amount);
+  const breakdown=makeRecurringBreakdown(nr);
+  appliedRecurringContext={id:nr.id,breakdown};
   getGiftableMembers().forEach(m=>{
-    const on=(r.defaultMembers||[]).includes(m.id);
+    const on=(nr.defaultMembers||[]).includes(m.id);
     const ck=document.getElementById('ck-'+m.id);if(ck)ck.checked=on;
     const ch=document.getElementById('chip-'+m.id);if(ch)ch.classList.toggle('on',on);
   });
   calcPP(); updateSelCount();
   document.querySelectorAll('#cat-tags .qtag').forEach(t=>{
-    if(t.dataset.cat===r.category){t.classList.add('sel');selCat=r.category;}
+    if(t.dataset.cat===nr.category){t.classList.add('sel');selCat=nr.category;}
     else t.classList.remove('sel');
   });
 }
@@ -3591,6 +3737,48 @@ function renderRecMemChips(){
   g.innerHTML=getGiftableMembers().map(m=>`<label class="chip" id="rchip-${m.id}" onclick="toggleRChip('${m.id}')"><input type="checkbox" id="rck-${m.id}"><span>${renderMemberName(m)}</span></label>`).join('');
 }
 function toggleRChip(id){ const ck=document.getElementById('rck-'+id);ck.checked=!ck.checked;document.getElementById('rchip-'+id).classList.toggle('on',ck.checked); }
+function renderRecExtraRows(items=[]){
+  const list=document.getElementById('rec-extra-list');
+  if(!list) return;
+  list.innerHTML=(items||[]).map(item=>recExtraRowHTML(item)).join('');
+  updateRecTotalPreview();
+  refreshIcons();
+}
+function recExtraRowHTML(item={}){
+  const id=item.id||uid();
+  const amount=item.amount?item.amount/1000:'';
+  return `<div class="rec-extra-row" data-id="${id}">
+    <div><label>Ghi chú</label><input type="text" class="rec-extra-note" placeholder="Tiền tip" value="${escapeHTML(item.note||'')}" oninput="updateRecTotalPreview()"></div>
+    <div><label>Số tiền</label><div class="input-k"><input type="number" class="rec-extra-amount" placeholder="30" step="1000" value="${amount}" oninput="updateRecTotalPreview()"><button type="button" class="btn-k" onclick="const i=this.parentElement.querySelector('input');i.value=(parseFloat(i.value)||0)/1000;updateRecTotalPreview()">÷k</button></div></div>
+    <button type="button" class="btn bd rec-extra-remove" onclick="removeRecExtraRow('${id}')" title="Xóa"><i data-lucide="x"></i></button>
+  </div>`;
+}
+function addRecExtraRow(item={note:'',amount:0}){
+  const list=document.getElementById('rec-extra-list');
+  if(!list) return;
+  list.insertAdjacentHTML('beforeend',recExtraRowHTML({...item,id:item.id||uid()}));
+  updateRecTotalPreview();
+  refreshIcons();
+}
+function removeRecExtraRow(id){
+  document.querySelector(`#rec-extra-list .rec-extra-row[data-id="${id}"]`)?.remove();
+  updateRecTotalPreview();
+}
+function collectRecurringCosts(){
+  const baseAmount=kVal('rec-base-amt');
+  const extraItems=[...document.querySelectorAll('#rec-extra-list .rec-extra-row')].map(row=>({
+    id:row.dataset.id||uid(),
+    note:(row.querySelector('.rec-extra-note')?.value||'').trim(),
+    amount:(parseFloat(row.querySelector('.rec-extra-amount')?.value)||0)*1000
+  })).filter(x=>x.amount>0||x.note);
+  return {baseAmount,extraItems,totalAmount:recurringTotal(baseAmount,extraItems)};
+}
+function updateRecTotalPreview(){
+  const p=document.getElementById('rec-total-preview');
+  if(!p) return;
+  const data=collectRecurringCosts();
+  p.textContent=`Tổng template: ${fmt(data.totalAmount)}`;
+}
 
 // ── LEADERBOARD ──
 function fillLbMonths(){
@@ -3698,7 +3886,7 @@ function fillMonths(){
 }
 function fillPersonFilter(){
   const s=document.getElementById('f-person'); if(!s) return; const c=s.value;
-  s.innerHTML='<option value="">Tất cả thành viên</option>'+getSortedMembers().map(m=>`<option value="${m.id}" ${c===m.id?'selected':''}>${escapeHTML(m.name)}</option>`).join('');
+  s.innerHTML='<option value="">Tất cả thành viên</option>'+getSortedMembers().map(m=>`<option value="${m.id}" ${c===m.id?'selected':''}>${escapeHTML(getMemberDisplayLabel(m))}</option>`).join('');
 }
 function fillCatFilter(){
   const s=document.getElementById('f-cat'); if(!s) return; const c=s.value;
@@ -3721,8 +3909,9 @@ function renderHistory(){
   el.innerHTML=txns.length
     ? `<div class="hist-table-wrap"><table><thead><tr><th>Ngày</th><th>Mô tả</th><th>Danh mục</th><th>Số tiền</th><th>Mỗi người</th><th>Thành viên</th><th></th></tr></thead><tbody>
         ${txns.map(t=>{
-          const names=(t.memberIds||[]).map(id=>(S.members.find(x=>x.id===id)||{}).name||'?').join(', ');
+          const names=(t.memberIds||[]).map(id=>getMemberName(id)).join(', ');
           const desc=t.type==='birthday_gift'?renderBirthdayGiftDescription(t):escapeHTML(t.desc);
+          const detailBtn=hasBreakdown(t)?`<button class="btn bg btn-sm" onclick="openBreakdownDetail('${t.id}')" title="Chi tiết">Chi tiết</button>`:'';
           return`<tr>
             <td class="tm" style="white-space:nowrap;font-family:'JetBrains Mono',monospace">${t.date}</td>
             <td>${desc}</td>
@@ -3730,21 +3919,22 @@ function renderHistory(){
             <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${t.type==='topup'&&t.amount>0?'var(--grn)':'var(--red)'}">${fmt(Math.abs(t.amount))}</td>
             <td class="az">${t.perPerson?fmt(t.perPerson):'—'}</td>
             <td class="tm">${escapeHTML(names||'—')}</td>
-            <td><button class="btn bd btn-sm wo hist-delete-btn" onclick="delTxn('${t.id}')" data-role-min="admin" title="Xóa giao dịch"><i data-lucide="x"></i></button></td>
+            <td><div class="hist-actions">${detailBtn}<button class="btn bd btn-sm wo hist-delete-btn" onclick="delTxn('${t.id}')" data-role-min="admin" title="Xóa giao dịch"><i data-lucide="x"></i></button></div></td>
           </tr>`;
         }).join('')}</tbody></table></div>
         <div class="hist-mobile-list">
           ${txns.map(t=>{
-            const names=(t.memberIds||[]).map(id=>(S.members.find(x=>x.id===id)||{}).name||'?').join(', ');
+            const names=(t.memberIds||[]).map(id=>getMemberName(id)).join(', ');
             const amountColor=t.type==='topup'&&t.amount>0?'var(--grn)':'var(--red)';
             const desc=t.type==='birthday_gift'?renderBirthdayGiftDescription(t):escapeHTML(t.desc);
+            const detailBtn=hasBreakdown(t)?`<button class="btn bg btn-sm" onclick="openBreakdownDetail('${t.id}')">Chi tiết</button>`:'';
             return `<div class="hist-item">
               <div class="hist-item-top">
                 <div>
                   <div class="hist-item-desc">${desc}</div>
                   <div class="hist-item-date">${t.date}</div>
                 </div>
-                <button class="btn bd btn-sm wo hist-delete-btn" onclick="delTxn('${t.id}')" data-role-min="admin" title="Xóa giao dịch"><i data-lucide="x"></i></button>
+                <div class="hist-actions">${detailBtn}<button class="btn bd btn-sm wo hist-delete-btn" onclick="delTxn('${t.id}')" data-role-min="admin" title="Xóa giao dịch"><i data-lucide="x"></i></button></div>
               </div>
               <div class="hist-item-meta mt12">
                 <div>${typeBadge(t)}</div>
@@ -3763,7 +3953,7 @@ function renderHistory(){
       const spent=txns.filter(t=>t.type==='session').reduce((s,t)=>s+(t.perPerson||0),0);
       const paid=txns.filter(t=>t.type==='topup'&&t.amount>0).reduce((s,t)=>s+t.amount,0);
       ps.style.display='block';
-      ps.innerHTML=`<div class="sec"><i data-lucide="user"></i> Tóm tắt: ${escapeHTML(m.name)}</div>
+      ps.innerHTML=`<div class="sec"><i data-lucide="user"></i> Tóm tắt: ${escapeHTML(getMemberDisplayLabel(m))}</div>
         <div class="sgrid">
           <div class="stat"><div class="stat-head"><div class="sl">Số dư</div></div><div class="sv" style="color:${debtColor(m.balance)}">${fmt(m.balance)}</div></div>
           <div class="stat"><div class="stat-head"><div class="sl">Đã chi</div></div><div class="sv" style="color:var(--red)">${fmt(spent)}</div></div>
@@ -3773,6 +3963,25 @@ function renderHistory(){
     }
   } else ps.style.display='none';
   applyRoleUI();
+  refreshIcons();
+}
+function openBreakdownDetail(txnId){
+  const t=S.transactions.find(x=>x.id===txnId);
+  if(!t||!hasBreakdown(t)) return toast('Giao dịch này không có chi tiết chi phí','err');
+  const b=t.breakdown;
+  const extras=(b.extraItems||[]).map(x=>`
+    <div class="breakdown-row">
+      <span>${escapeHTML(x.note||'Phụ phí')}</span>
+      <span class="breakdown-amount">${fmt(x.amount||0)}</span>
+    </div>`).join('');
+  document.getElementById('breakdown-content').innerHTML=`
+    <div class="gift-pin-summary"><b>${escapeHTML(t.desc||'Chi phí')}</b><br><span class="tm">${escapeHTML(t.date||'')}</span></div>
+    <div class="breakdown-list">
+      <div class="breakdown-row"><span>Chi phí chính</span><span class="breakdown-amount">${fmt(b.baseAmount||0)}</span></div>
+      ${extras||'<div class="breakdown-row"><span>Không có phụ phí</span><span class="breakdown-amount">—</span></div>'}
+      <div class="breakdown-row total"><span>Tổng</span><span class="breakdown-amount">${fmt(b.totalAmount||t.amount||0)}</span></div>
+    </div>`;
+  document.getElementById('ov-breakdown').classList.add('open');
   refreshIcons();
 }
 function renderExpPrev(){
@@ -3793,7 +4002,7 @@ function renderExpPrev(){
 function buildPdfReportData(mo,yr){
   const ym=`${yr}-${String(mo).padStart(2,'0')}`;
   const fund=S.members.find(m=>m.id===FUND_ID);
-  const members=getSortedMembers().filter(m=>m.id!==FUND_ID);
+  const members=getGiftableMembers();
   const sessions=S.transactions.filter(t=>t.type==='session'&&t.date.startsWith(ym));
   const topups=S.transactions.filter(t=>t.type==='topup'&&t.date.startsWith(ym));
   const monthTxns=S.transactions.filter(t=>t.date.startsWith(ym)).sort((a,b)=>a.date.localeCompare(b.date));
@@ -3801,7 +4010,7 @@ function buildPdfReportData(mo,yr){
     const ms=sessions.filter(t=>(t.memberIds||[]).includes(m.id));
     const paid=topups.filter(t=>(t.memberIds||[]).includes(m.id)&&t.amount>0).reduce((s,t)=>s+t.amount,0);
     const spent=ms.reduce((s,t)=>s+(t.perPerson||0),0);
-    return {stt:i+1,name:m.name,count:ms.length,spent,paid,balance:m.balance||0,status:m.balance>0?'Đủ tiền':m.balance<0?'Đang nợ':'Hòa'};
+    return {stt:i+1,name:getMemberDisplayLabel(m),count:ms.length,spent,paid,balance:m.balance||0,status:m.balance>0?'Đủ tiền':m.balance<0?'Đang nợ':'Hòa'};
   });
   const totalDebt=members.filter(m=>(m.balance||0)<0).reduce((s,m)=>s+(m.balance||0),0);
   return {
@@ -3818,7 +4027,7 @@ function buildPdfReportData(mo,yr){
       type:t.category || (t.type==='topup'?(t.amount>=0?'Nạp':'Trừ'):'Buổi chi tiêu'),
       amount:t.amount,
       perPerson:t.perPerson||0,
-      names:(t.memberIds||[]).map(id=>(S.members.find(x=>x.id===id)||{}).name||'?').join(', ')
+      names:(t.memberIds||[]).map(id=>getMemberName(id)).join(', ')
     }))
   };
 }
@@ -3844,11 +4053,11 @@ function makePdfReportEl(d){
   el.className='pdf-report';
   el.innerHTML=`
     <div class="pdf-head">
-      <div class="pdf-brand"><div class="pdf-mark">C1K</div><div><h1>CLB C1K</h1><div class="pdf-muted">Báo cáo chi tiêu tháng ${String(d.mo).padStart(2,'0')}/${d.yr}</div></div></div>
+      <div class="pdf-brand"><div class="pdf-mark">C1K</div><div><h1>${escapeHTML(getAppName())}</h1><div class="pdf-muted">Báo cáo chi tiêu tháng ${String(d.mo).padStart(2,'0')}/${d.yr}</div></div></div>
       <div class="pdf-muted" style="text-align:right">Ngày xuất<br><b>${new Date().toLocaleDateString('vi-VN')}</b></div>
     </div>
     <div class="pdf-grid">
-      <div class="pdf-card"><div class="pdf-label">Quỹ team</div><div class="pdf-val">${fmt(d.fundBal)}</div></div>
+      <div class="pdf-card"><div class="pdf-label">Team Vault</div><div class="pdf-val">${fmt(d.fundBal)}</div></div>
       <div class="pdf-card"><div class="pdf-label">Tổng chi tháng</div><div class="pdf-val">${fmt(d.totalSpent)}</div></div>
       <div class="pdf-card"><div class="pdf-label">Tổng nạp tháng</div><div class="pdf-val">${fmt(d.totalTopup)}</div></div>
       <div class="pdf-card"><div class="pdf-label">Tổng nợ hiện tại</div><div class="pdf-val">${fmt(d.totalDebt)}</div></div>
@@ -3862,7 +4071,7 @@ function makePdfReportEl(d){
       <table><thead><tr><th>Ngày</th><th>Mô tả</th><th>Danh mục/Loại</th><th>Tổng tiền</th><th>Mỗi người</th><th>Thành viên liên quan</th></tr></thead>
       <tbody>${d.txns.length?d.txns.map(t=>`<tr><td>${t.date}</td><td>${escapeHTML(t.desc)}</td><td>${escapeHTML(t.type)}</td><td>${fmt(Math.abs(t.amount))}</td><td>${t.perPerson?fmt(t.perPerson):'—'}</td><td>${escapeHTML(t.names||'—')}</td></tr>`).join(''):`<tr><td colspan="6">Không có giao dịch trong tháng này</td></tr>`}</tbody></table>
     </div>
-    <div class="pdf-footer">Generated by CLB C1K</div>`;
+    <div class="pdf-footer">Generated by ${escapeHTML(getAppName())}</div>`;
   return el;
 }
 async function exportPDF(){
@@ -4002,7 +4211,7 @@ function renderBirthdayGiftModalBody(){
   const selectedGift=getSelectedBirthdayGift();
   el.innerHTML=`
     <div class="gift-pin-modal-body">
-      <div class="gift-modal-note">Tiền sẽ trừ từ người tặng và cộng vào QUỸ SINH NHẬT.</div>
+      <div class="gift-modal-note">Tiền sẽ trừ từ người tặng và cộng vào Birthday Vault.</div>
       <div>
         <label>Chọn quà</label>
         <div class="gift-choice-grid">
@@ -4046,7 +4255,10 @@ function openCreateGiftPinModal(context){
     <div class="gift-pin-summary">Bạn đang tạo mã PIN cho: <b>${escapeHTML(giver.name)}</b></div>
     <div><label>PIN 4 số</label><input type="password" id="gift-pin" maxlength="4" inputmode="numeric" autocomplete="one-time-code"></div>
     <div><label>Nhập lại PIN 4 số</label><input type="password" id="gift-pin-confirm" maxlength="4" inputmode="numeric" autocomplete="one-time-code"></div>
-    <div class="gift-pin-note">Ghi nhớ mã PIN này để gửi quà hoặc đòi lại quà sau này. Admin không xem được PIN, chỉ có thể reset nếu bạn quên.</div>`;
+    <div class="gift-pin-note">
+      <div>Ghi nhớ mã PIN cho các hoạt động khác sau này.</div>
+      <div>Admin không xem được PIN, chỉ có thể reset nếu bạn quên.</div>
+    </div>`;
   document.getElementById('gift-pin-submit').innerHTML='<i data-lucide="save"></i> Lưu PIN & Gửi quà';
   document.getElementById('gift-pin-error').textContent='';
   document.getElementById('ov-gift-pin').classList.add('open');
@@ -4059,7 +4271,7 @@ function openEnterGiftPinModal(context){
   giftPinContext={mode:'send',...context};
   document.getElementById('gift-pin-title').innerHTML='<i data-lucide="gift"></i>Xác nhận gửi quà';
   document.getElementById('gift-pin-body').innerHTML=`
-    <div class="gift-pin-summary"><b>${escapeHTML(giver.name)}</b> sẽ tặng sinh nhật <b>${escapeHTML(receiver.name)}</b> <b>${escapeHTML(context.giftName||'quà sinh nhật')}</b> · <b>${fmt(context.amount)}</b>.<br>Tiền sẽ trừ vào số dư của <b>${escapeHTML(giver.name)}</b> và cộng vào <b>QUỸ SINH NHẬT</b>.</div>
+    <div class="gift-pin-summary"><b>${escapeHTML(giver.name)}</b> sẽ tặng sinh nhật <b>${escapeHTML(receiver.name)}</b> <b>${escapeHTML(context.giftName||'quà sinh nhật')}</b> · <b>${fmt(context.amount)}</b>.<br>Tiền sẽ trừ vào số dư của <b>${escapeHTML(giver.name)}</b> và cộng vào <b>Birthday Vault</b>.</div>
     <div><label>PIN 4 số</label><input type="password" id="gift-pin" maxlength="4" inputmode="numeric" autocomplete="one-time-code"></div>`;
   document.getElementById('gift-pin-submit').innerHTML='<i data-lucide="check-circle-2"></i> Xác nhận gửi quà';
   document.getElementById('gift-pin-error').textContent='';
@@ -4126,7 +4338,7 @@ async function performBirthdayGift({fromId,toId,giftId,giftName,amount}){
   const gift=BIRTHDAY_GIFTS.find(g=>g.id===giftId&&g.amount===amount);
   if(!gift) return toast('Chọn quà sinh nhật hợp lệ','err'),false;
   const giver=getMemberById(fromId), receiver=getMemberById(toId), fund=getBirthdayFund();
-  if(!giver||!receiver||!fund){toast('Không tìm thấy người tặng hoặc QUỸ SINH NHẬT','err');return false;}
+  if(!giver||!receiver||!fund){toast('Không tìm thấy người tặng hoặc Birthday Vault','err');return false;}
   if(giver.isFixed||fromId===BIRTHDAY_FUND_ID||fromId===FUND_ID){toast('Quỹ không thể là người tặng','err');return false;}
   giver.balance-=amount;
   giver.totalOut=(giver.totalOut||0)+amount;
@@ -4148,7 +4360,7 @@ function cancelBirthdayGift(txnId,cancelledBy){
   if(!t||t.type!=='birthday_gift') return false;
   if(t.status==='cancelled') return toast('Món quà này đã được xử lý','err'),false;
   const giver=getMemberById(t.fromId), fund=getBirthdayFund();
-  if(!giver||!fund){toast('Không tìm thấy người tặng hoặc QUỸ SINH NHẬT','err');return false;}
+  if(!giver||!fund){toast('Không tìm thấy người tặng hoặc Birthday Vault','err');return false;}
   const amount=t.amount||0;
   giver.balance+=amount;
   giver.totalOut=Math.max(0,(giver.totalOut||0)-amount);
@@ -4209,32 +4421,41 @@ function saveSession(){
   if(!requireRole('admin','Cần quyền Admin để ghi chi tiêu')) return;
   const date=document.getElementById('sess-date').value;
   let desc=document.getElementById('sess-desc').value.trim()||selCat;
-  const amt=kVal('sess-amt');
+  const amt=readSessionAmount();
   const mids=getGiftableMembers().filter(m=>document.getElementById('ck-'+m.id)?.checked).map(m=>m.id);
   if(!date) return toast('Chọn ngày','err');
   if(!amt||amt<=0) return toast('Nhập số tiền','err');
   if(!mids.length) return toast('Chọn ít nhất 1 thành viên','err');
   let perPerson,totalAmt;
+  const recPayload=appliedRecurringContext?{
+    recurringId:appliedRecurringContext.id,
+    ...(appliedRecurringContext.breakdown?.extraItems?.length?{breakdown:JSON.parse(JSON.stringify(appliedRecurringContext.breakdown))}:{})
+  }:{};
   if(splitMode==='split'){perPerson=Math.ceil(amt/mids.length);totalAmt=amt;}
   else if(splitMode==='fixed'){perPerson=amt;totalAmt=amt*mids.length;}
   else{
     const paidBy=document.getElementById('paid-by-sel').value;
     totalAmt=amt; perPerson=Math.ceil(amt/mids.length);
     if(paidBy){const payer=S.members.find(x=>x.id===paidBy);if(payer){payer.balance+=amt;payer.totalIn=(payer.totalIn||0)+amt;}}
-    S.transactions.push({id:uid(),date,type:'session',desc,category:selCat,amount:totalAmt,memberIds:mids,perPerson,splitMode,paidBy:paidBy||null});
+    S.transactions.push({id:uid(),date,type:'session',desc,category:selCat,amount:totalAmt,memberIds:mids,perPerson,splitMode,paidBy:paidBy||null,...recPayload});
     mids.forEach(id=>{const m=S.members.find(x=>x.id===id);if(m){m.balance-=perPerson;m.totalOut=(m.totalOut||0)+perPerson;}});
     fbSave(); render(); resetSessionForm();
     toast(`✅ ${mids.length} người × ${fmt(perPerson)} = ${fmt(totalAmt)}`);
     return;
   }
   mids.forEach(id=>{const m=S.members.find(x=>x.id===id);if(m){m.balance-=perPerson;m.totalOut=(m.totalOut||0)+perPerson;}});
-  S.transactions.push({id:uid(),date,type:'session',desc,category:selCat,amount:totalAmt,memberIds:mids,perPerson,splitMode,paidBy:null});
+  S.transactions.push({id:uid(),date,type:'session',desc,category:selCat,amount:totalAmt,memberIds:mids,perPerson,splitMode,paidBy:null,...recPayload});
   fbSave(); render(); resetSessionForm();
   toast(`✅ ${mids.length} người × ${fmt(perPerson)} = ${fmt(totalAmt)}`);
 }
 function resetSessionForm(){
   document.getElementById('sess-desc').value='';
-  document.getElementById('sess-amt').value='';
+  const amtEl=document.getElementById('sess-amt');
+  amtEl.value='';
+  delete amtEl.dataset.vnd;
+  appliedRecurringContext=null;
+  const recPick=document.getElementById('rec-pick');
+  if(recPick) recPick.value='';
   document.getElementById('pp-display').style.display='none';
   getGiftableMembers().forEach(m=>{
     const ck=document.getElementById('ck-'+m.id);if(ck)ck.checked=false;
@@ -4271,7 +4492,7 @@ function revertBirthdayGiftActive(t){
   const giver=getMemberById(t.fromId);
   const fund=getBirthdayFund();
   const amount=t.amount||0;
-  if(!giver||!fund){toast('Không tìm thấy người tặng hoặc QUỸ SINH NHẬT','err');return false;}
+  if(!giver||!fund){toast('Không tìm thấy người tặng hoặc Birthday Vault','err');return false;}
   giver.balance+=amount;
   giver.totalOut=Math.max(0,(giver.totalOut||0)-amount);
   fund.balance-=amount;
@@ -4328,7 +4549,7 @@ async function delTxn(id){
     const active=(t.status||'active')==='active';
     const ok=await confirmAction({
       title:'Xóa giao dịch quà sinh nhật',
-      message:active?'Giao dịch đang có hiệu lực sẽ được đảo số dư: người tặng nhận lại tiền và QUỸ SINH NHẬT bị trừ tương ứng.':'Giao dịch đã được đòi lại/hoàn tiền trước đó nên chỉ xóa record khỏi lịch sử, không đảo số dư thêm lần nữa.',
+      message:active?'Giao dịch đang có hiệu lực sẽ được đảo số dư: người tặng nhận lại tiền và Birthday Vault bị trừ tương ứng.':'Giao dịch đã được đòi lại/hoàn tiền trước đó nên chỉ xóa record khỏi lịch sử, không đảo số dư thêm lần nữa.',
       confirmText:'Xóa giao dịch'
     });
     if(!ok) return;
@@ -4378,10 +4599,11 @@ function openAddRec(){
   document.getElementById('rec-edit-id').value='';
   document.getElementById('rec-modal-title').innerHTML='<i data-lucide="refresh-cw"></i>Thêm chi phí định kỳ';
   document.getElementById('rec-name').value='';
-  document.getElementById('rec-amt').value='';
+  document.getElementById('rec-base-amt').value='';
   document.getElementById('rec-cat').value='🎾 Tennis';
   document.querySelectorAll('#rec-cat-tags .qtag').forEach((t,i)=>t.classList.toggle('sel',i===2));
-  setRecMode('fixed'); renderRecMemChips();
+  renderRecExtraRows([]);
+  setRecMode('split'); renderRecMemChips();
   getGiftableMembers().forEach(m=>{
     const ck=document.getElementById('rck-'+m.id);if(ck)ck.checked=false;
     const ch=document.getElementById('rchip-'+m.id);if(ch)ch.classList.remove('on');
@@ -4393,18 +4615,20 @@ function openAddRec(){
 function editRec(id){
   if(!requireRole('admin')) return;
   const r=S.recurring.find(x=>x.id===id); if(!r) return;
+  const nr=normalizeRecurring(r);
   document.getElementById('rec-edit-id').value=id;
   document.getElementById('rec-modal-title').innerHTML='<i data-lucide="pencil"></i>Sửa chi phí định kỳ';
-  document.getElementById('rec-name').value=r.name;
-  document.getElementById('rec-amt').value=r.amount;
-  document.getElementById('rec-cat').value=r.category;
+  document.getElementById('rec-name').value=nr.name;
+  document.getElementById('rec-base-amt').value=nr.baseAmount?nr.baseAmount/1000:'';
+  document.getElementById('rec-cat').value=nr.category;
   document.querySelectorAll('#rec-cat-tags .qtag').forEach(t=>{
     const c=t.textContent.trim();
-    t.classList.toggle('sel', r.category.includes(c.split(' ').slice(-1)[0]) || c===r.category);
+    t.classList.toggle('sel', nr.category.includes(c.split(' ').slice(-1)[0]) || c===nr.category);
   });
-  setRecMode(r.mode); renderRecMemChips();
+  renderRecExtraRows(nr.extraItems);
+  setRecMode(nr.mode); renderRecMemChips();
   getGiftableMembers().forEach(m=>{
-    const on=(r.defaultMembers||[]).includes(m.id);
+    const on=(nr.defaultMembers||[]).includes(m.id);
     const ck=document.getElementById('rck-'+m.id);if(ck)ck.checked=on;
     const ch=document.getElementById('rchip-'+m.id);if(ch)ch.classList.toggle('on',on);
   });
@@ -4415,21 +4639,23 @@ function setRecMode(m){
   recMode=m; document.getElementById('rec-mode').value=m;
   document.getElementById('rm-split').className=m==='split'?'btn bp':'btn bg';
   document.getElementById('rm-fixed').className=m==='fixed'?'btn bp':'btn bg';
-  document.getElementById('rec-amt-label').textContent=m==='fixed'?'Số tiền mỗi người':'Tổng tiền';
+  document.getElementById('rec-amt-label').textContent='Chi phí chính';
   refreshIcons();
 }
 function saveRec(){
   if(!requireRole('admin')) return;
   const name=document.getElementById('rec-name').value.trim();
-  const amt=kVal('rec-amt');
+  const costs=collectRecurringCosts();
+  const amt=costs.totalAmount;
   const cat=document.getElementById('rec-cat').value;
   const mode=document.getElementById('rec-mode').value;
   const dms=getGiftableMembers().filter(m=>document.getElementById('rck-'+m.id)?.checked).map(m=>m.id);
   if(!name) return toast('Nhập tên template','err');
   if(!amt||amt<=0) return toast('Nhập số tiền','err');
   const eid=document.getElementById('rec-edit-id').value;
-  if(eid){const r=S.recurring.find(x=>x.id===eid);if(r){r.name=name;r.amount=amt;r.category=cat;r.mode=mode;r.defaultMembers=dms;}}
-  else S.recurring.push({id:uid(),name,category:cat,mode,amount:amt,defaultMembers:dms});
+  const payload={name,category:cat,mode,amount:amt,baseAmount:costs.baseAmount,extraItems:costs.extraItems,defaultMembers:dms};
+  if(eid){const r=S.recurring.find(x=>x.id===eid);if(r) Object.assign(r,payload);}
+  else S.recurring.push({id:uid(),...payload});
   fbSave(); closeOv('ov-rec'); renderRecList(); renderRecPick(); toast('Đã lưu: '+name);
 }
 async function delRec(id){
@@ -4460,20 +4686,20 @@ function exportXL(){
   const top=S.transactions.filter(t=>t.type==='topup'&&t.date.startsWith(ym));
   const wb=XLSX.utils.book_new();
   const sm=getGiftableMembers();
-  const s1=[[`BÁO CÁO CLB C1K — ${lb}`],[`Xuất: ${new Date().toLocaleDateString('vi-VN')}`],[],['STT','Thành viên','Số buổi','Tổng chi','Đã nạp','Số dư','Trạng thái']];
+  const s1=[[`BÁO CÁO ${getAppName()} — ${lb}`],[`Xuất: ${new Date().toLocaleDateString('vi-VN')}`],[],['STT','Thành viên','Số buổi','Tổng chi','Đã nạp','Số dư','Trạng thái']];
   sm.forEach((m,i)=>{
     const ms=ses.filter(t=>t.memberIds.includes(m.id));
-    s1.push([i+1,m.name,ms.length,ms.reduce((s,t)=>s+(t.perPerson||0),0),top.filter(t=>t.memberIds.includes(m.id)&&t.amount>0).reduce((s,t)=>s+t.amount,0),m.balance,m.balance>0?'Đủ tiền':m.balance<0?'Đang nợ':'Hòa']);
+    s1.push([i+1,getMemberDisplayLabel(m),ms.length,ms.reduce((s,t)=>s+(t.perPerson||0),0),top.filter(t=>t.memberIds.includes(m.id)&&t.amount>0).reduce((s,t)=>s+t.amount,0),m.balance,m.balance>0?'Đủ tiền':m.balance<0?'Đang nợ':'Hòa']);
   });
   const ws1=XLSX.utils.aoa_to_sheet(s1);
   ws1['!cols']=[{wch:6},{wch:20},{wch:10},{wch:16},{wch:14},{wch:18},{wch:12}];
   XLSX.utils.book_append_sheet(wb,ws1,'Tổng hợp');
-  const s2=[[`CHI TIẾT BUỔI — ${lb}`],[],['Ngày','Mô tả','Danh mục','Kiểu','Tổng tiền','Số người','Mỗi người',...sm.map(m=>m.name)]];
-  ses.forEach(t=>s2.push([t.date,t.desc,t.category||'',t.splitMode||'split',t.amount,t.memberIds.length,t.perPerson,...sm.map(m=>t.memberIds.includes(m.id)?t.perPerson:'-')]));
+  const s2=[[`CHI TIẾT BUỔI — ${lb}`],[],['Ngày','Mô tả','Danh mục','Kiểu','Tổng tiền','Số người','Mỗi người','Chi tiết chi phí',...sm.map(m=>getMemberDisplayLabel(m))]];
+  ses.forEach(t=>s2.push([t.date,t.desc,t.category||'',t.splitMode||'split',t.amount,t.memberIds.length,t.perPerson,formatBreakdownText(t.breakdown)||'—',...sm.map(m=>t.memberIds.includes(m.id)?t.perPerson:'-')]));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s2),'Chi tiết buổi');
   const s3=[[`NẠP / TRỪ — ${lb}`],[],['Ngày','Thành viên','Số tiền','Loại','Ghi chú']];
   top.sort((a,b)=>a.date.localeCompare(b.date)).forEach(t=>{
-    const names=(t.memberIds||[]).map(id=>(S.members.find(x=>x.id===id)||{}).name||'?').join(', ');
+    const names=(t.memberIds||[]).map(id=>getMemberName(id)).join(', ');
     s3.push([t.date,names,t.amount,t.amount>=0?'Nạp':'Trừ',t.desc]);
   });
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s3),'Nạp & Trừ');

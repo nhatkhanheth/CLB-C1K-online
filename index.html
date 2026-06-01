@@ -1192,6 +1192,26 @@ nav.sidebar a.nav-link.active{
 .hist-item-date{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--txt-3);white-space:nowrap}
 .hist-item-amount{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:900;white-space:nowrap}
 .hist-item-members{font-size:12px;color:var(--txt-3);line-height:1.45;margin-top:8px}
+.member-archive-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.mini-tab{border:1px solid var(--bord);background:rgba(255,255,255,.045);color:var(--txt-2);border-radius:999px;padding:8px 12px;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.mini-tab.on{background:rgba(247,147,26,.14);border-color:rgba(247,147,26,.34);color:#fff}
+.member-note-icon{display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;margin-left:7px;border-radius:999px;background:rgba(247,147,26,.10);border:1px solid rgba(247,147,26,.24);color:var(--acc);vertical-align:middle}
+.member-note-icon svg{width:12px;height:12px}
+.member-archived-badge{display:inline-flex;align-items:center;margin-left:7px;border-radius:999px;padding:2px 7px;background:rgba(148,163,184,.10);border:1px solid rgba(148,163,184,.20);color:var(--txt-3);font-size:10px;font-weight:800;vertical-align:middle}
+.member-row-archived{opacity:.62}
+.analysis-grid{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px}
+.analysis-card{border:1px solid var(--bord);border-radius:18px;background:rgba(255,255,255,.035);padding:14px}
+.analysis-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt-3);font-weight:900}
+.analysis-value{font-family:'JetBrains Mono',monospace;font-size:19px;font-weight:900;color:var(--txt);margin-top:6px}
+.analysis-list{display:grid;gap:10px}
+.analysis-row,.audit-row{display:grid;grid-template-columns:minmax(120px,1fr) auto;gap:12px;align-items:center;border-bottom:1px solid rgba(255,255,255,.07);padding:11px 0}
+.analysis-row:last-child,.audit-row:last-child{border-bottom:0}
+.analysis-meter{height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:6px}
+.analysis-meter span{display:block;height:100%;background:linear-gradient(90deg,var(--acc),rgba(236,72,153,.75));border-radius:inherit}
+.audit-title{font-size:13px;font-weight:850;color:var(--txt)}
+.audit-meta{font-size:11px;color:var(--txt-3);margin-top:3px}
+.audit-detail{font-size:12px;color:var(--txt-2);margin-top:4px;line-height:1.45}
+.audit-type{justify-self:end;border:1px solid rgba(247,147,26,.24);background:rgba(247,147,26,.10);color:var(--acc);border-radius:999px;padding:4px 8px;font-size:10px;font-weight:900}
 
 .super-only{display:none}
 body.role-superadmin .super-only{display:block}
@@ -2254,6 +2274,9 @@ nav.sidebar a.nav-link *{pointer-events:none}
   .members-table .btn-sm svg{width:14px;height:14px}
   .balance-table .status-cell{text-align:center!important}
   .balance-table .bdg-debt{min-width:88px;justify-content:center}
+  .analysis-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .analysis-row,.audit-row{grid-template-columns:1fr}
+  .audit-type{justify-self:start}
 }
 @media(prefers-reduced-motion:reduce){
   .birthday-banner,
@@ -2456,6 +2479,11 @@ nav.sidebar a.nav-link *{pointer-events:none}
   </div>
   <div class="card">
     <div class="sec"><i data-lucide="list"></i> Danh sách</div>
+    <div class="member-archive-tabs" aria-label="Lọc thành viên">
+      <button type="button" class="mini-tab on" id="mem-filter-active" onclick="setMemberArchiveFilter('active')">Đang hoạt động</button>
+      <button type="button" class="mini-tab" id="mem-filter-archived" onclick="setMemberArchiveFilter('archived')">Đã ẩn</button>
+      <button type="button" class="mini-tab" id="mem-filter-all" onclick="setMemberArchiveFilter('all')">Tất cả</button>
+    </div>
     <table class="members-table"><thead><tr><th>Tên</th><th>Số dư</th><th class="hm">Tổng nạp</th><th class="hm">Tổng chi</th><th></th></tr></thead>
     <tbody id="tbl-members"></tbody></table>
   </div>
@@ -2596,6 +2624,7 @@ nav.sidebar a.nav-link *{pointer-events:none}
     <select id="lb-month" onchange="renderLeaderboard()" style="width:auto;min-width:170px">
       <option value="current">Top tháng trước</option>
     </select>
+    <button class="btn bg btn-sm" id="lb-alltime" onclick="toggleLeaderboardAllTime()"><i data-lucide="infinity"></i> All of time</button>
   </div>
   <div id="lb-content"></div>
 </div>
@@ -2605,6 +2634,8 @@ nav.sidebar a.nav-link *{pointer-events:none}
   <div class="ph"><div><h1>Lịch sử & Xuất</h1><p>Xem giao dịch · Xuất báo cáo</p></div></div>
   <div class="tabs">
     <div class="tab on" id="tab-hist" onclick="switchHistTab('hist')"><i data-lucide="clipboard-list"></i> Lịch sử</div>
+    <div class="tab" id="tab-analysis" onclick="switchHistTab('analysis')"><i data-lucide="chart-line"></i> Phân tích</div>
+    <div class="tab admin-tool" id="tab-audit" onclick="switchHistTab('audit')" data-role-min="admin"><i data-lucide="shield-check"></i> Nhật ký</div>
     <div class="tab" id="tab-export" onclick="switchHistTab('export')"><i data-lucide="download"></i> Xuất & Share</div>
     <div class="tab-indicator" id="hist-tab-ind"></div>
   </div>
@@ -2617,6 +2648,35 @@ nav.sidebar a.nav-link *{pointer-events:none}
     </div>
     <div class="card history-list-card"><div id="tbl-history"></div></div>
     <div id="person-summary" style="display:none" class="card mt20"></div>
+  </div>
+  <div id="analysis-content" style="display:none">
+    <div class="history-filter-grid mb16">
+      <select id="analysis-month" onchange="renderAnalysis()" style="width:auto"></select>
+      <button class="btn bg btn-sm" onclick="renderAnalysis()"><i data-lucide="refresh-cw"></i> Làm mới</button>
+      <button class="btn bp btn-sm" onclick="copyMonthlyAnalysisReport()"><i data-lucide="copy"></i> Copy báo cáo tháng</button>
+    </div>
+    <div id="analysis-summary" class="analysis-grid mb20"></div>
+    <div class="card mb20">
+      <div class="sec"><i data-lucide="pie-chart"></i> Chi phí theo danh mục</div>
+      <div id="analysis-cats"></div>
+    </div>
+    <div class="card">
+      <div class="sec"><i data-lucide="activity"></i> Timeline hoạt động CLB</div>
+      <div id="analysis-timeline"></div>
+    </div>
+  </div>
+  <div id="audit-content" style="display:none">
+    <div class="fl g8 mb16" style="flex-wrap:wrap;align-items:center">
+      <select id="audit-filter" onchange="setAuditFilter(this.value)" style="width:auto;min-width:180px">
+        <option value="all">Tất cả hoạt động</option>
+        <option value="member">Thành viên</option>
+        <option value="transaction">Giao dịch</option>
+        <option value="recurring">Định kỳ</option>
+        <option value="settings">Cài đặt</option>
+      </select>
+      <button class="btn bd btn-sm super-only" onclick="clearAuditLogs()"><i data-lucide="trash-2"></i> Xóa nhật ký</button>
+    </div>
+    <div class="card"><div id="audit-list"></div></div>
   </div>
   <div id="export-content" style="display:none">
     <div class="card mb20" style="border-color:rgba(247,147,26,.18);background:rgba(247,147,26,.035)">
@@ -2680,6 +2740,7 @@ nav.sidebar a.nav-link *{pointer-events:none}
     <div class="mt"><i data-lucide="user-plus"></i>Thêm thành viên</div>
     <div class="mb12"><label>Tên</label><input type="text" id="mem-name" placeholder="Nguyễn Văn A"></div>
     <div class="mb12"><label>Ngày sinh nhật</label><input type="text" id="mem-birthday" placeholder="DD-MM-YYYY" maxlength="10"><div class="form-hint">VD: 26-05-1995</div></div>
+    <div class="mb12"><label>Ghi chú riêng</label><textarea id="mem-note" rows="3" placeholder="Ghi chú nội bộ cho member này"></textarea></div>
     <div class="mb12">
       <label>Số dư ban đầu (×1000)</label>
       <div class="input-k">
@@ -2702,10 +2763,12 @@ nav.sidebar a.nav-link *{pointer-events:none}
     <input type="hidden" id="edit-mem-id">
     <div class="mb12"><label>Tên</label><input type="text" id="edit-mem-name" onkeydown="if(event.key==='Enter')saveEditMember()"></div>
     <div class="mb12"><label>Ngày sinh nhật</label><input type="text" id="edit-mem-birthday" placeholder="DD-MM-YYYY" maxlength="10" onkeydown="if(event.key==='Enter')saveEditMember()"><div class="form-hint">Để trống nếu chưa có. VD: 26-05-1995</div></div>
+    <div class="mb12"><label>Ghi chú riêng</label><textarea id="edit-mem-note" rows="3" placeholder="Ghi chú nội bộ cho member này"></textarea></div>
     <div class="mb12" id="edit-gift-pin-status"></div>
     <div class="fl g8 mt12">
       <button class="btn bp" onclick="saveEditMember()" style="flex:1"><i data-lucide="save"></i> Lưu</button>
-      <button class="btn bd" onclick="deleteEditingMember()"><i data-lucide="trash-2"></i> Xóa</button>
+      <button class="btn bg" id="edit-archive-btn" onclick="toggleArchiveEditingMember()"><i data-lucide="archive"></i> Ẩn</button>
+      <button class="btn bd" data-role-min="superadmin" onclick="deleteEditingMember()"><i data-lucide="trash-2"></i> Xóa</button>
       <button class="btn bg" onclick="closeOv('ov-edit-member')">Hủy</button>
     </div>
   </div>
@@ -2953,7 +3016,7 @@ nav.sidebar a.nav-link *{pointer-events:none}
 // STATE
 // ═══════════════════════════════════════════════════════════════
 const DEFAULT_APP_NAME = 'CLB C1K';
-let S = { members:[], transactions:[], recurring:[], settings:{appName:DEFAULT_APP_NAME} };
+let S = { members:[], transactions:[], recurring:[], settings:{appName:DEFAULT_APP_NAME}, auditLogs:[] };
 let snapshots = {};
 let isAdmin = false;
 let isViewer = false;
@@ -3007,6 +3070,9 @@ let fbStarted = false;
 let fbFirstDataLoaded = false;
 let fbMaintenanceTimer = null;
 let currentPayQrAmount = 0;
+let memberArchiveFilter = 'active';
+let leaderboardAllTime = false;
+let auditFilter = 'all';
 
 // ═══════════════════════════════════════════════════════════════
 // UTILS
@@ -3036,6 +3102,33 @@ function hideAppLoading(){
 function ensureSettings(){
   if(!S.settings) S.settings={};
   if(!S.settings.appName) S.settings.appName=DEFAULT_APP_NAME;
+  if(!Array.isArray(S.auditLogs)) S.auditLogs=[];
+  S.members=(S.members||[]).map(m=>({
+    ...m,
+    archived:!!m.archived,
+    archivedAt:m.archivedAt||null,
+    note:typeof m.note==='string'?m.note:(m.note||'')
+  }));
+}
+function makeAuditLog(action,{targetType='',targetId='',title='',detail=''}={}){
+  return {
+    id:uid(),
+    at:Date.now(),
+    role:currentRole||'viewer',
+    action,
+    targetType,
+    targetId,
+    title,
+    detail
+  };
+}
+function addAuditLog(action,opt={}){
+  if(!hasRole('admin')) return null;
+  ensureSettings();
+  const log=makeAuditLog(action,opt);
+  S.auditLogs.unshift(log);
+  S.auditLogs=S.auditLogs.slice(0,500);
+  return log;
 }
 function getAppName(){
   ensureSettings();
@@ -3543,8 +3636,16 @@ function resetMemberGiftPin(memberId){
   return true;
 }
 function getBirthdayFund(){ return getMemberById(BIRTHDAY_FUND_ID); }
+function isMemberArchived(m){ return !!(m&&m.archived&&!m.isFixed); }
+function getActiveSortedMembers(){ return getSortedMembers().filter(m=>m.isFixed||!isMemberArchived(m)); }
+function getMembersByArchiveFilter(){
+  const list=getSortedMembers();
+  if(memberArchiveFilter==='archived') return list.filter(m=>isMemberArchived(m));
+  if(memberArchiveFilter==='all') return list;
+  return list.filter(m=>m.isFixed||!isMemberArchived(m));
+}
 function getGiftableMembers(){
-  return (S.members||[]).filter(m=>m&&!m.isFixed&&m.id!==FUND_ID&&m.id!==BIRTHDAY_FUND_ID);
+  return (S.members||[]).filter(m=>m&&!m.isFixed&&!isMemberArchived(m)&&m.id!==FUND_ID&&m.id!==BIRTHDAY_FUND_ID);
 }
 function getBirthdayMembersThisMonth(){
   return getGiftableMembers()
@@ -3627,6 +3728,7 @@ function saveAppName(){
   if(name.length<2||name.length>24) return toast('Tên app cần từ 2–24 ký tự','err');
   ensureSettings();
   S.settings.appName=name;
+  addAuditLog('settings_app_name',{targetType:'settings',title:'Đổi tên app',detail:`Tên mới: ${name}`});
   fbSave();
   renderAppName();
   toast('Đã đổi tên app');
@@ -3952,6 +4054,7 @@ function applyRoleUI(){
   if(settingsBtn) settingsBtn.style.display=isAdmin?'inline-flex':'none';
   if(!isAdmin) document.getElementById('ov-settings')?.classList.remove('open');
   if(!isAdmin&&document.getElementById('tab-tennis')?.classList.contains('on')) switchRecTab('session');
+  if(!isAdmin&&document.getElementById('tab-audit')?.classList.contains('on')) switchHistTab('hist');
   if(isAdmin) initTennisPlanner();
   refreshPinLoginUI();
   renderQuickPinSettings();
@@ -4011,7 +4114,7 @@ function fbSave(force=false){
   syncDot('saving');
   ensureSettings();
   stripPlainGiftPinFields();
-  const payload={members:S.members,transactions:S.transactions,recurring:S.recurring,settings:S.settings,updatedAt:Date.now()};
+  const payload={members:S.members,transactions:S.transactions,recurring:S.recurring,settings:S.settings,auditLogs:S.auditLogs||[],updatedAt:Date.now()};
   localStorage.setItem('clb_cache',JSON.stringify(S));
   if(window._fbSet){
     window._fbSet(payload)
@@ -4052,6 +4155,7 @@ function startFB(){
     S.transactions=val.transactions||[];
     S.recurring=val.recurring||[];
     S.settings=val.settings||S.settings||{appName:DEFAULT_APP_NAME};
+    S.auditLogs=val.auditLogs||[];
     ensureSettings();
     stripPlainGiftPinFields();
     ensureFundMember();
@@ -4346,6 +4450,8 @@ async function changePw(){
   try{
     if(!window._fbUpdateAdminPassword) throw new Error('firebase-not-ready');
     await window._fbUpdateAdminPassword(nw,p2);
+    addAuditLog('auth_change_password',{targetType:'settings',title:'Đổi mật khẩu Admin Firebase Auth'});
+    fbSave(true);
     if(window._fbSignOut) await window._fbSignOut().catch(()=>{});
     localStorage.removeItem(SK);
     localStorage.removeItem(VK);
@@ -4395,17 +4501,22 @@ function go(id){
   document.querySelectorAll('nav.sidebar a.nav-link').forEach(a=>a.classList.remove('active'));
   page.classList.add('active');
   nav.classList.add('active');
-  if(id==='history'){ fillMonths(); fillPersonFilter(); fillCatFilter(); renderHistory(); renderExpPrev(); renderPdfPreview(); moveHistTabInd(); }
+  if(id==='history'){ fillMonths(); fillPersonFilter(); fillCatFilter(); fillAnalysisMonths(); renderHistory(); renderAnalysis(); renderAuditLog(); renderExpPrev(); renderPdfPreview(); moveHistTabInd(); }
   if(id==='record'){ renderChips(); renderRecPick(); renderQMem(); moveRecTabInd(); }
   if(id==='leaderboard'){ fillLbMonths(); renderLeaderboard(); }
   haptic(5);
 }
 function switchHistTab(t){
-  document.getElementById('hist-content').style.display=t==='hist'?'block':'none';
-  document.getElementById('export-content').style.display=t==='export'?'block':'none';
-  document.getElementById('tab-hist').classList.toggle('on',t==='hist');
-  document.getElementById('tab-export').classList.toggle('on',t==='export');
+  if(t==='audit'&&!hasRole('admin')) t='hist';
+  ['hist','analysis','audit','export'].forEach(x=>{
+    const panel=document.getElementById(x==='hist'?'hist-content':x+'-content');
+    const tab=document.getElementById('tab-'+x);
+    if(panel) panel.style.display=x===t?'block':'none';
+    if(tab) tab.classList.toggle('on',x===t);
+  });
   moveHistTabInd();
+  if(t==='analysis'){ fillAnalysisMonths(); renderAnalysis(); }
+  if(t==='audit') renderAuditLog();
   if(t==='export'){ renderExpPrev(); renderPdfPreview(); }
 }
 function moveHistTabInd(){
@@ -4602,8 +4713,9 @@ function renderDash(){
     animateCount(el,0,tgt,700,n=>fmt(n));
   });
 
-  document.getElementById('tbl-balance').innerHTML=getSortedMembers().length
-    ? getSortedMembers().map(m=>{
+  const balanceRows=getActiveSortedMembers();
+  document.getElementById('tbl-balance').innerHTML=balanceRows.length
+    ? balanceRows.map(m=>{
         const bal=m.balance||0;
         const fundKind=m.isBirthdayFund?'birthday-fund':'team-fund';
         const statusCell=m.isFixed
@@ -4699,12 +4811,30 @@ function typeBadge(t){
   return `<span class="bdg ${cls}">${escapeHTML(cat)}</span>`;
 }
 
+function setMemberArchiveFilter(v){
+  memberArchiveFilter=v||'active';
+  updateMemberArchiveTabs();
+  renderMembersList();
+  refreshIcons();
+}
+function updateMemberArchiveTabs(){
+  ['active','archived','all'].forEach(x=>document.getElementById('mem-filter-'+x)?.classList.toggle('on',memberArchiveFilter===x));
+}
+function renderMemberListLabel(m){
+  const note=(m.note||'').trim();
+  const noteIcon=note&&hasRole('admin')?`<span class="member-note-icon" title="${escapeHTML(note)}"><i data-lucide="sticky-note"></i></span>`:'';
+  const archived=isMemberArchived(m)?'<span class="member-archived-badge">Đã ẩn</span>':'';
+  return `${renderMemberLabel(m)}${noteIcon}${archived}`;
+}
 function renderMembersList(){
-  document.getElementById('tbl-members').innerHTML=getSortedMembers().length
-    ? getSortedMembers().map(m=>{
+  updateMemberArchiveTabs();
+  const rows=getMembersByArchiveFilter();
+  document.getElementById('tbl-members').innerHTML=rows.length
+    ? rows.map(m=>{
       const fundKind=m.isBirthdayFund?'birthday-fund':'team-fund';
-      return `<tr ${m.isFixed?`class="fund-row ${fundKind}-row"`:''}>
-        <td>${renderMemberLabel(m)}</td>
+      const rowCls=[m.isFixed?`fund-row ${fundKind}-row`:'',isMemberArchived(m)?'member-row-archived':''].filter(Boolean).join(' ');
+      return `<tr ${rowCls?`class="${rowCls}"`:''}>
+        <td>${renderMemberListLabel(m)}</td>
         <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${m.isFixed?(m.isBirthdayFund?'#ffc3d9':'#ffbf75'):debtColor(m.balance||0)}">${fmt(m.balance)}</td>
         <td class="ap hm">${fmt(m.totalIn||0)}</td>
         <td class="an hm">${fmt(m.totalOut||0)}</td>
@@ -4715,8 +4845,8 @@ function renderMembersList(){
     }).join('')
     : '<tr><td colspan="5"><div class="empty"><i data-lucide="users"></i>Chưa có thành viên</div></td></tr>';
 }
-function renderTopupSel(){ const s=document.getElementById('topup-mem');if(!s)return;const c=s.value;s.innerHTML=getSortedMembers().map(m=>`<option value="${m.id}">${escapeHTML(getMemberDisplayLabel(m))}</option>`).join('');if(c)s.value=c; }
-function renderQMem(){ const s=document.getElementById('q-mem');if(!s)return;const c=s.value;s.innerHTML=getSortedMembers().map(m=>`<option value="${m.id}">${escapeHTML(getMemberDisplayLabel(m))}</option>`).join('');if(c)s.value=c; }
+function renderTopupSel(){ const s=document.getElementById('topup-mem');if(!s)return;const c=s.value;s.innerHTML=getActiveSortedMembers().map(m=>`<option value="${m.id}">${escapeHTML(getMemberDisplayLabel(m))}</option>`).join('');if(c&&[...s.options].some(o=>o.value===c))s.value=c; }
+function renderQMem(){ const s=document.getElementById('q-mem');if(!s)return;const c=s.value;s.innerHTML=getActiveSortedMembers().map(m=>`<option value="${m.id}">${escapeHTML(getMemberDisplayLabel(m))}</option>`).join('');if(c&&[...s.options].some(o=>o.value===c))s.value=c; }
 
 function renderChips(){
   const g=document.getElementById('sess-chips'); if(!g) return;
@@ -4891,18 +5021,52 @@ function fillLbMonths(){
   sel.innerHTML=`<option value="current">Top tháng trước (${fmtMonth(prevYm)})</option>`+[...ms].sort().reverse().map(m=>`<option value="${m}" ${cur===m?'selected':''}>${fmtMonth(m)}</option>`).join('');
 }
 function fmtMonth(ym){const[y,mo]=ym.split('-');return`Tháng ${parseInt(mo)}/${y}`;}
+function toggleLeaderboardAllTime(){
+  leaderboardAllTime=!leaderboardAllTime;
+  renderLeaderboard();
+}
+function renderLeaderboardMemberName(m){
+  return `${renderMemberName(m)}${isMemberArchived(m)?'<span class="member-archived-badge">Đã ẩn</span>':''}`;
+}
+function buildAllTimeLeaderboard(){
+  const rows=new Map();
+  (S.members||[])
+    .filter(m=>m&&!m.isFixed&&!isLeaderboardHiddenMember(m))
+    .forEach(m=>rows.set(m.id,{...m,spent:0,count:0}));
+  (S.transactions||[]).filter(t=>t.type==='session').forEach(t=>{
+    const ids=t.memberIds||[];
+    const fallback=ids.length?Math.ceil((t.amount||0)/ids.length):0;
+    const per=t.perPerson||fallback;
+    ids.forEach(id=>{
+      const row=rows.get(id);
+      if(!row) return;
+      row.spent+=per;
+      row.count+=1;
+    });
+  });
+  return [...rows.values()];
+}
 
 function renderLeaderboard(){
   fillLbMonths();
+  const btn=document.getElementById('lb-alltime');
+  if(btn) btn.className=leaderboardAllTime?'btn bp btn-sm':'btn bg btn-sm';
+  const monthSelect=document.getElementById('lb-month');
+  if(monthSelect) monthSelect.disabled=leaderboardAllTime;
   const val=document.getElementById('lb-month')?.value||'current';
   const ym=val==='current'?previousMonthKey():val;
   let spending;
-  if(snapshots[ym]) spending=snapshots[ym].spending||[];
-  else spending=buildSnapshot(ym).spending||[];
-  spending=spending.filter(m=>{
-    const live=S.members.find(x=>x.id===m.id);
-    return !isLeaderboardHiddenMember(live||m);
-  });
+  if(leaderboardAllTime){
+    spending=buildAllTimeLeaderboard();
+  }else{
+    if(snapshots[ym]) spending=snapshots[ym].spending||[];
+    else spending=buildSnapshot(ym).spending||[];
+    spending=spending.filter(m=>{
+      const live=S.members.find(x=>x.id===m.id);
+      return !isLeaderboardHiddenMember(live||m);
+    });
+  }
+  const boardSub=leaderboardAllTime?'All of time':fmtMonth(ym);
 
   const el=document.getElementById('lb-content'); if(!el) return;
   function makeBoardHTML(title, icon, iconColor, arr, valFn, emptyMsg){
@@ -4914,7 +5078,7 @@ function renderLeaderboard(){
             <div class="lb-ic" style="color:${iconColor}"><i data-lucide="${icon}"></i></div>
             ${title}
           </div>
-          <div class="lb-board-sub">${fmtMonth(ym)}</div>
+          <div class="lb-board-sub">${boardSub}</div>
         </div>
         ${arr.length?`
         <div class="lb-list">
@@ -4926,7 +5090,7 @@ function renderLeaderboard(){
             return `
             <div class="lb-row ${rowCls}">
               <div class="lb-rank ${i<3?'r'+(i+1):''}">${i+1}</div>
-              <div class="lb-name">${renderMemberName(liveMember)}</div>
+              <div class="lb-name">${renderLeaderboardMemberName(liveMember)}</div>
               <div class="lb-val">${valFn(m)}</div>
             </div>`;
           }).join('')}
@@ -4944,8 +5108,8 @@ function renderLeaderboard(){
     .map(m=>({...m,liveBal:m.balance||0}));
 
   el.innerHTML=`
-    ${makeBoardHTML('Top Chi tiêu', 'flame', 'var(--acc)', bySpent, m=>fmt(m.spent), 'Chưa ai chi tiêu')}
-    ${makeBoardHTML('Top Tham gia', 'target', 'var(--acc)', byCount, m=>m.count+' buổi', 'Chưa ai tham gia')}
+    ${makeBoardHTML(leaderboardAllTime?'Chi tiêu nhiều nhất mọi thời đại':'Top Chi tiêu', 'flame', 'var(--acc)', bySpent, m=>fmt(m.spent), 'Chưa ai chi tiêu')}
+    ${makeBoardHTML(leaderboardAllTime?'Tham gia nhiều nhất mọi thời đại':'Top Tham gia', 'target', 'var(--acc)', byCount, m=>m.count+' buổi', 'Chưa ai tham gia')}
 
     <div class="lb-section">
       <div class="doa-board">
@@ -4977,6 +5141,170 @@ function renderLeaderboard(){
     </div>
   `;
   refreshIcons();
+}
+
+// ── ANALYSIS & AUDIT ──
+function getAvailableMonthKeys(){
+  const ms=new Set((S.transactions||[]).map(t=>(t.date||'').substring(0,7)).filter(Boolean));
+  ms.add(getCurrentYm());
+  return [...ms].sort().reverse();
+}
+function fillAnalysisMonths(){
+  const s=document.getElementById('analysis-month');
+  if(!s) return;
+  const cur=s.value;
+  const months=getAvailableMonthKeys();
+  s.innerHTML=months.map(m=>`<option value="${m}" ${cur===m?'selected':''}>${fmtMonth(m)}</option>`).join('');
+  if(cur&&months.includes(cur)) s.value=cur;
+}
+function simplifyCategory(cat=''){
+  const c=(cat||'Khác').replace(/[^\w\sÀ-ỹ]/g,'').trim();
+  return c||'Khác';
+}
+function buildMonthCore(ym){
+  const txns=(S.transactions||[]).filter(t=>(t.date||'').startsWith(ym));
+  const sessions=txns.filter(t=>t.type==='session');
+  const topups=txns.filter(t=>t.type==='topup');
+  const gifts=txns.filter(t=>t.type==='birthday_gift'&&(t.status||'active')==='active');
+  const catMap=new Map();
+  sessions.forEach(t=>{
+    const cat=simplifyCategory(t.category||t.desc||'Khác');
+    const row=catMap.get(cat)||{name:cat,total:0,count:0};
+    row.total+=t.amount||0;
+    row.count+=1;
+    catMap.set(cat,row);
+  });
+  const participants=new Set();
+  sessions.forEach(t=>(t.memberIds||[]).forEach(id=>participants.add(id)));
+  return {
+    ym,txns,sessions,topups,gifts,
+    totalSpent:sessions.reduce((s,t)=>s+(t.amount||0),0),
+    totalTopup:topups.filter(t=>(t.amount||0)>0).reduce((s,t)=>s+(t.amount||0),0),
+    totalDeduct:topups.filter(t=>(t.amount||0)<0).reduce((s,t)=>s+Math.abs(t.amount||0),0),
+    giftTotal:gifts.reduce((s,t)=>s+(t.amount||0),0),
+    participants:participants.size,
+    cats:[...catMap.values()].sort((a,b)=>b.total-a.total)
+  };
+}
+function buildAnalysisData(ym){
+  const core=buildMonthCore(ym);
+  const timeline=getAvailableMonthKeys().slice(0,12).map(m=>buildMonthCore(m));
+  return {
+    ...core,
+    timeline,
+    debtors:getGiftableMembers().filter(m=>(m.balance||0)<0).length,
+    teamBalance:getMemberById(FUND_ID)?.balance||0,
+    birthdayBalance:getMemberById(BIRTHDAY_FUND_ID)?.balance||0
+  };
+}
+function analysisCard(label,value,accent=''){
+  return `<div class="analysis-card">
+    <div class="analysis-label">${escapeHTML(label)}</div>
+    <div class="analysis-value" style="${accent?`color:${accent}`:''}">${escapeHTML(value)}</div>
+  </div>`;
+}
+function renderAnalysis(){
+  fillAnalysisMonths();
+  const ym=document.getElementById('analysis-month')?.value||getCurrentYm();
+  const data=buildAnalysisData(ym);
+  const summary=document.getElementById('analysis-summary');
+  if(summary){
+    summary.innerHTML=[
+      analysisCard('Buổi chi tiêu',String(data.sessions.length),'var(--acc)'),
+      analysisCard('Tổng chi',fmt(data.totalSpent),'var(--red)'),
+      analysisCard('Nạp / Trừ',`${fmt(data.totalTopup)} / ${fmt(data.totalDeduct)}`),
+      analysisCard('Quà sinh nhật',fmt(data.giftTotal),'#ffc3d9'),
+      analysisCard('Member tham gia',String(data.participants)),
+      analysisCard('Đang nợ',`${data.debtors} người`,'var(--red)'),
+      analysisCard('Vault Team',fmt(data.teamBalance),'#ffbf75'),
+      analysisCard('Vault Birthday',fmt(data.birthdayBalance),'#ffc3d9')
+    ].join('');
+  }
+  const cats=document.getElementById('analysis-cats');
+  if(cats){
+    cats.innerHTML=data.cats.length?`<div class="analysis-list">${data.cats.map(c=>{
+      const pct=data.totalSpent?Math.round(c.total/data.totalSpent*100):0;
+      return `<div class="analysis-row">
+        <div>
+          <div class="audit-title">${escapeHTML(c.name)} · ${c.count} buổi</div>
+          <div class="analysis-meter"><span style="width:${pct}%"></span></div>
+        </div>
+        <div class="lb-val">${fmt(c.total)} · ${pct}%</div>
+      </div>`;
+    }).join('')}</div>`:'<div class="empty"><i data-lucide="inbox"></i>Chưa có chi phí tháng này</div>';
+  }
+  const timeline=document.getElementById('analysis-timeline');
+  if(timeline){
+    timeline.innerHTML=data.timeline.length?`<div class="analysis-list">${data.timeline.map(m=>`
+      <div class="analysis-row">
+        <div>
+          <div class="audit-title">${fmtMonth(m.ym)}</div>
+          <div class="audit-meta">${m.sessions.length} buổi · ${m.participants} member tham gia · ${m.gifts.length} quà sinh nhật</div>
+        </div>
+        <div class="lb-val">${fmt(m.totalSpent)}</div>
+      </div>`).join('')}</div>`:'<div class="empty"><i data-lucide="activity"></i>Chưa có timeline</div>';
+  }
+  refreshIcons();
+}
+function buildAnalysisReportText(data){
+  const lines=[
+    `${getAppName()} - Phân tích ${fmtMonth(data.ym)}`,
+    '---------------',
+    `Buổi chi tiêu: ${data.sessions.length}`,
+    `Tổng chi: ${fmt(data.totalSpent)}`,
+    `Nạp / Trừ: ${fmt(data.totalTopup)} / ${fmt(data.totalDeduct)}`,
+    `Quà sinh nhật: ${fmt(data.giftTotal)}`,
+    `Member tham gia: ${data.participants}`,
+    `Đang nợ hiện tại: ${data.debtors} người`,
+    `Vault Team: ${fmt(data.teamBalance)}`,
+    `Vault Birthday: ${fmt(data.birthdayBalance)}`
+  ];
+  if(data.cats.length){
+    lines.push('---------------','Danh mục chi phí');
+    data.cats.forEach(c=>lines.push(`- ${c.name}: ${fmt(c.total)} (${c.count} buổi)`));
+  }
+  return lines.join('\n');
+}
+async function copyMonthlyAnalysisReport(){
+  const ym=document.getElementById('analysis-month')?.value||getCurrentYm();
+  await copyTextToClipboard(buildAnalysisReportText(buildAnalysisData(ym)),'Đã copy báo cáo phân tích');
+}
+function auditTypeLabel(log){
+  if(log.targetType==='member') return 'Thành viên';
+  if(log.targetType==='transaction') return 'Giao dịch';
+  if(log.targetType==='recurring') return 'Định kỳ';
+  if(log.targetType==='settings') return 'Cài đặt';
+  if(log.action&&log.action.includes('auth')) return 'Bảo mật';
+  return 'Hệ thống';
+}
+function auditMatchesFilter(log){
+  if(auditFilter==='all') return true;
+  return log.targetType===auditFilter;
+}
+function setAuditFilter(v){ auditFilter=v||'all'; renderAuditLog(); }
+function renderAuditLog(){
+  const el=document.getElementById('audit-list');
+  if(!el) return;
+  if(!hasRole('admin')){el.innerHTML='';return;}
+  const rows=(S.auditLogs||[]).filter(auditMatchesFilter);
+  el.innerHTML=rows.length?rows.map(log=>`
+    <div class="audit-row">
+      <div>
+        <div class="audit-title">${escapeHTML(log.title||log.action||'Hoạt động')}</div>
+        <div class="audit-meta">${new Date(log.at||Date.now()).toLocaleString('vi-VN')} · ${escapeHTML(log.role||'admin')}</div>
+        ${log.detail?`<div class="audit-detail">${escapeHTML(log.detail)}</div>`:''}
+      </div>
+      <div class="audit-type">${escapeHTML(auditTypeLabel(log))}</div>
+    </div>`).join(''):'<div class="empty"><i data-lucide="shield-check"></i>Chưa có nhật ký</div>';
+  refreshIcons();
+}
+async function clearAuditLogs(){
+  if(!requireRole('superadmin','Cần quyền Super Admin để xóa nhật ký')) return;
+  const ok=await confirmAction({title:'Xóa nhật ký',message:'Xóa toàn bộ Audit Log hiện tại?',confirmText:'Xóa nhật ký'});
+  if(!ok) return;
+  const log=makeAuditLog('audit_clear',{targetType:'settings',title:'Xóa Audit Log'});
+  S.auditLogs=[log];
+  fbSave(); renderAuditLog(); toast('Đã xóa nhật ký');
 }
 
 // ── HISTORY ──
@@ -5181,6 +5509,8 @@ function makePdfReportEl(d){
 async function exportPDF(){
   if(!requireRole('admin','Cần quyền Admin để xuất PDF')) return;
   const {mo,yr}=getPdfPeriod();
+  addAuditLog('report_export_pdf',{targetType:'settings',title:'Xuất báo cáo PDF',detail:`Tháng ${mo}/${yr}`});
+  fbSave(true);
   if(!window.jspdf?.jsPDF) return toast('Chưa tải được thư viện PDF, thử lại sau','err');
   const d=buildPdfReportData(mo,yr);
   const report=makePdfReportEl(d);
@@ -5218,6 +5548,7 @@ function openAddMember(){
   if(!requireRole('admin','Cần quyền Admin để thêm thành viên')) return;
   document.getElementById('mem-name').value='';
   document.getElementById('mem-birthday').value='';
+  document.getElementById('mem-note').value='';
   document.getElementById('mem-bal').value='0';
   document.getElementById('ov-member').classList.add('open');
   setTimeout(()=>document.getElementById('mem-name').focus(),250);
@@ -5227,17 +5558,23 @@ function addMember(){
   if(!requireRole('admin')) return;
   const name=document.getElementById('mem-name').value.trim();
   const birthday=document.getElementById('mem-birthday').value.trim();
+  const note=document.getElementById('mem-note').value.trim();
   const bal=kVal('mem-bal');
   if(!name) return toast('Nhập tên thành viên','err');
   if(birthday&&!parseBirthday(birthday)) return toast('Ngày sinh nhật phải đúng DD-MM-YYYY và là ngày hợp lệ','err');
   if(S.members.find(m=>m.name===name)) return toast('Tên đã tồn tại','err');
-  S.members.push({id:uid(),name,birthday,balance:bal,totalIn:bal>0?bal:0,totalOut:bal<0?-bal:0,order:S.members.length});
+  const member={id:uid(),name,birthday,note,archived:false,archivedAt:null,balance:bal,totalIn:bal>0?bal:0,totalOut:bal<0?-bal:0,order:S.members.length};
+  S.members.push(member);
+  addAuditLog('member_add',{targetType:'member',targetId:member.id,title:`Thêm thành viên ${name}`,detail:note?`Ghi chú: ${note}`:''});
   fbSave(); closeOv('ov-member'); render(); toast('Đã thêm '+name);
 }
 async function delMember(id){
-  if(!requireRole('admin')) return;
+  if(!requireRole('superadmin','Cần quyền Super Admin để xóa thật thành viên')) return;
   const ok=await confirmAction({title:'Xóa thành viên',message:'Thành viên sẽ bị xóa khỏi danh sách. Lịch sử giao dịch cũ vẫn giữ theo dữ liệu hiện có.',confirmText:'Xóa thành viên'});
   if(!ok) return;
+  const m=S.members.find(x=>x.id===id);
+  if(!m||m.isFixed) return;
+  addAuditLog('member_delete',{targetType:'member',targetId:id,title:`Xóa thành viên ${m?m.name:id}`,detail:'Xóa vĩnh viễn khỏi danh sách thành viên'});
   S.members=S.members.filter(m=>m.id!==id);
   fbSave(); render(); toast('Đã xóa');
 }
@@ -5247,6 +5584,8 @@ function openEditMember(id){
   document.getElementById('edit-mem-id').value=id;
   document.getElementById('edit-mem-name').value=m.name;
   document.getElementById('edit-mem-birthday').value=m.birthday||'';
+  document.getElementById('edit-mem-note').value=m.note||'';
+  renderEditArchiveButton(m);
   renderEditGiftPinStatus(m);
   document.getElementById('ov-edit-member').classList.add('open');
   setTimeout(()=>document.getElementById('edit-mem-name').focus(),250);
@@ -5256,19 +5595,42 @@ function saveEditMember(){
   const id=document.getElementById('edit-mem-id').value;
   const name=document.getElementById('edit-mem-name').value.trim();
   const birthday=document.getElementById('edit-mem-birthday').value.trim();
+  const note=document.getElementById('edit-mem-note').value.trim();
   if(!name) return toast('Nhập tên thành viên','err');
   if(birthday&&!parseBirthday(birthday)) return toast('Ngày sinh nhật phải đúng DD-MM-YYYY và là ngày hợp lệ','err');
   if(S.members.find(m=>m.name===name&&m.id!==id)) return toast('Tên đã tồn tại','err');
   const m=S.members.find(x=>x.id===id); if(!m) return;
+  const oldName=m.name;
   m.name=name;
   m.birthday=birthday;
+  m.note=note;
+  addAuditLog('member_update',{targetType:'member',targetId:id,title:`Sửa thành viên ${oldName}`,detail:`Tên mới: ${name}${note?` · Ghi chú: ${note}`:''}`});
   fbSave(); closeOv('ov-edit-member'); render(); toast('Đã cập nhật');
 }
 async function deleteEditingMember(){
-  if(!requireRole('admin')) return;
+  if(!requireRole('superadmin','Cần quyền Super Admin để xóa thật thành viên')) return;
   const id=document.getElementById('edit-mem-id').value;
   closeOv('ov-edit-member');
   await delMember(id);
+}
+function renderEditArchiveButton(m){
+  const btn=document.getElementById('edit-archive-btn');
+  if(!btn) return;
+  const archived=isMemberArchived(m);
+  btn.innerHTML=archived?'<i data-lucide="archive-restore"></i> Khôi phục':'<i data-lucide="archive"></i> Ẩn';
+  btn.className=archived?'btn bp':'btn bg';
+  btn.disabled=!!m.isFixed;
+  refreshIcons();
+}
+function toggleArchiveEditingMember(){
+  if(!requireRole('admin')) return;
+  const id=document.getElementById('edit-mem-id').value;
+  const m=S.members.find(x=>x.id===id);
+  if(!m||m.isFixed) return;
+  m.archived=!isMemberArchived(m);
+  m.archivedAt=m.archived?Date.now():null;
+  addAuditLog(m.archived?'member_archive':'member_restore',{targetType:'member',targetId:id,title:`${m.archived?'Ẩn':'Khôi phục'} thành viên ${m.name}`});
+  fbSave(); closeOv('ov-edit-member'); render(); toast(m.archived?'Đã ẩn thành viên':'Đã khôi phục thành viên');
 }
 
 function renderEditGiftPinStatus(m){
@@ -5294,6 +5656,7 @@ async function resetMemberGiftPinFromEdit(){
   const ok=await confirmAction({title:'Reset PIN',message:`Reset PIN của ${m.name}? Member sẽ phải tạo PIN mới khi gửi quà.`,confirmText:'Reset PIN',danger:false});
   if(!ok) return;
   resetMemberGiftPin(id);
+  addAuditLog('member_gift_pin_reset',{targetType:'member',targetId:id,title:`Reset PIN quà của ${m.name}`});
   fbSave(); render(); renderEditGiftPinStatus(getMemberById(id)); toast('Đã reset PIN');
 }
 function selectBirthdayGift(giftId){
@@ -5454,13 +5817,15 @@ async function performBirthdayGift({fromId,toId,giftId,giftName,amount}){
   giver.totalOut=(giver.totalOut||0)+amount;
   fund.balance=(fund.balance||0)+amount;
   fund.totalIn=(fund.totalIn||0)+amount;
-  S.transactions.push({
+  const txn={
     id:uid(),date:td(),type:'birthday_gift',
     desc:`${giver.name} đã tặng sinh nhật ${receiver.name} ${gift.name} ${fmt(amount)}`,
     category:'🎂 Sinh nhật',giftId:gift.id,giftName:gift.name,amount,fromId,toId,fundId:BIRTHDAY_FUND_ID,
     memberIds:[fromId,BIRTHDAY_FUND_ID],status:'active',createdAt:Date.now(),
     cancelledAt:null,cancelledBy:null
-  });
+  };
+  S.transactions.push(txn);
+  addAuditLog('birthday_gift_create',{targetType:'transaction',targetId:txn.id,title:`Gửi quà sinh nhật: ${giver.name} → ${receiver.name}`,detail:`${gift.name} · ${fmt(amount)}`});
   fbSave(true); closeOv('ov-birthday-gift'); render(); toast(`${giver.name} đã gửi ${gift.name}`);
   fireConfetti(); haptic([18,20,30]);
   return true;
@@ -5479,6 +5844,7 @@ function cancelBirthdayGift(txnId,cancelledBy){
   t.status='cancelled';
   t.cancelledAt=Date.now();
   t.cancelledBy=cancelledBy;
+  addAuditLog('birthday_gift_cancel',{targetType:'transaction',targetId:txnId,title:`Hoàn/đòi lại quà sinh nhật`,detail:`${getMemberName(t.fromId)} · ${fmt(amount)} · ${cancelledBy||''}`});
   fbSave(true); render(); refreshHistoryAfterTxnChange();
   return true;
 }
@@ -5501,7 +5867,9 @@ function doTopup(sign){
   const wasNegative = (m.balance||0) < 0;
   m.balance+=amt;
   if(amt>0) m.totalIn=(m.totalIn||0)+amt; else m.totalOut=(m.totalOut||0)-amt;
-  S.transactions.push({id:uid(),date:td(),type:'topup',desc:nt||(amt>0?`${m.name} nạp tiền`:`Trừ tiền ${m.name}`),category:'',amount:amt,memberIds:[mid]});
+  const txn={id:uid(),date:td(),type:'topup',desc:nt||(amt>0?`${m.name} nạp tiền`:`Trừ tiền ${m.name}`),category:'',amount:amt,memberIds:[mid]};
+  S.transactions.push(txn);
+  addAuditLog('transaction_topup',{targetType:'transaction',targetId:txn.id,title:`${amt>0?'Nạp':'Trừ'} tiền ${m.name}`,detail:fmt(Math.abs(amt))});
   document.getElementById('topup-amt').value='';
   document.getElementById('topup-note').value='';
   fbSave(); render();
@@ -5520,7 +5888,9 @@ function quickTopup(){
   const wasNegative=(m.balance||0)<0;
   m.balance+=amt;
   if(amt>0) m.totalIn=(m.totalIn||0)+amt; else m.totalOut=(m.totalOut||0)+Math.abs(amt);
-  S.transactions.push({id:uid(),date:dt||td(),type:'topup',desc:nt||(amt>0?`${m.name} nạp tiền`:`Trừ tiền ${m.name}`),category:'',amount:amt,memberIds:[mid]});
+  const txn={id:uid(),date:dt||td(),type:'topup',desc:nt||(amt>0?`${m.name} nạp tiền`:`Trừ tiền ${m.name}`),category:'',amount:amt,memberIds:[mid]};
+  S.transactions.push(txn);
+  addAuditLog('transaction_quick_topup',{targetType:'transaction',targetId:txn.id,title:`${amt>0?'Nạp nhanh':'Trừ nhanh'} ${m.name}`,detail:fmt(Math.abs(amt))});
   document.getElementById('q-amt').value='';
   document.getElementById('q-note').value='';
   fbSave(); render();
@@ -5550,6 +5920,7 @@ function saveSession(){
     const txn={id:uid(),date,type:'session',desc,category:selCat,amount:totalAmt,memberIds:mids,perPerson,splitMode,paidBy:paidBy||null,createdAt:Date.now(),...recPayload};
     txn.messengerText=buildMessengerText(txn);
     S.transactions.push(txn);
+    addAuditLog('transaction_session',{targetType:'transaction',targetId:txn.id,title:`Ghi buổi ${desc}`,detail:`${mids.length} người · ${fmt(totalAmt)}`});
     mids.forEach(id=>{const m=S.members.find(x=>x.id===id);if(m){m.balance-=perPerson;m.totalOut=(m.totalOut||0)+perPerson;}});
     fbSave(); render(); resetSessionForm();
     toast(`✅ ${mids.length} người × ${fmt(perPerson)} = ${fmt(totalAmt)}`,'ok',{duration:8000,actionText:'Copy thông báo',onAction:()=>copyMessengerText(txn.id)});
@@ -5559,6 +5930,7 @@ function saveSession(){
   const txn={id:uid(),date,type:'session',desc,category:selCat,amount:totalAmt,memberIds:mids,perPerson,splitMode,paidBy:null,createdAt:Date.now(),...recPayload};
   txn.messengerText=buildMessengerText(txn);
   S.transactions.push(txn);
+  addAuditLog('transaction_session',{targetType:'transaction',targetId:txn.id,title:`Ghi buổi ${desc}`,detail:`${mids.length} người · ${fmt(totalAmt)}`});
   fbSave(); render(); resetSessionForm();
   toast(`✅ ${mids.length} người × ${fmt(perPerson)} = ${fmt(totalAmt)}`,'ok',{duration:8000,actionText:'Copy thông báo',onAction:()=>copyMessengerText(txn.id)});
 }
@@ -5629,6 +6001,7 @@ function deleteBirthdayGiftTransaction(id){
   if(!t) return;
   if((t.status||'active')==='active'&&!revertBirthdayGiftActive(t)) return;
   S.transactions.splice(idx,1);
+  addAuditLog('transaction_delete',{targetType:'transaction',targetId:id,title:'Xóa giao dịch quà sinh nhật',detail:t.desc||''});
   fbSave();
   render();
   refreshHistoryAfterTxnChange();
@@ -5676,6 +6049,7 @@ async function delTxn(id){
   lastDeletedTxn={txn:JSON.parse(JSON.stringify(t)),index:idx};
   revertTransactionEffect(t);
   S.transactions.splice(idx,1);
+  addAuditLog('transaction_delete',{targetType:'transaction',targetId:id,title:`Xóa giao dịch ${t.desc||id}`,detail:`${t.date||''} · ${fmt(Math.abs(t.amount||0))}`});
   fbSave(); render(); refreshHistoryAfterTxnChange();
   toast('Đã xóa giao dịch','warn',{duration:8000,actionText:'Hoàn tác',onAction:undoDeleteTxn});
   lastDeletedTimer=setTimeout(()=>{lastDeletedTxn=null;lastDeletedTimer=null;},8000);
@@ -5688,6 +6062,7 @@ function undoDeleteTxn(){
   applyTransactionEffect(txn);
   lastDeletedTxn=null;
   if(lastDeletedTimer){clearTimeout(lastDeletedTimer);lastDeletedTimer=null;}
+  addAuditLog('transaction_undo_delete',{targetType:'transaction',targetId:txn.id,title:`Hoàn tác xóa giao dịch ${txn.desc||txn.id}`});
   fbSave(); render(); refreshHistoryAfterTxnChange(); toast('Đã hoàn tác');
 }
 function clearAll(){
@@ -5713,7 +6088,8 @@ async function confirmClearAll(){
     err.textContent=firebaseUserMessage(e,'Sai mật khẩu Admin hoặc mật khẩu cấp 2!');
     return;
   }
-  S={members:[],transactions:[],recurring:[],settings:{appName:DEFAULT_APP_NAME}};
+  const log=makeAuditLog('system_clear_all',{targetType:'settings',title:'Xóa toàn bộ dữ liệu'});
+  S={members:[],transactions:[],recurring:[],settings:{appName:DEFAULT_APP_NAME},auditLogs:[log]};
   fbSave(); render(); closeOv('ov-clearall'); toast('Đã xoá toàn bộ','err');
 }
 
@@ -5777,15 +6153,25 @@ function saveRec(){
   if(!amt||amt<=0) return toast('Nhập số tiền','err');
   const eid=document.getElementById('rec-edit-id').value;
   const payload={name,category:cat,mode,amount:amt,baseAmount:costs.baseAmount,extraItems:costs.extraItems,defaultMembers:dms};
-  if(eid){const r=S.recurring.find(x=>x.id===eid);if(r) Object.assign(r,payload);}
-  else S.recurring.push({id:uid(),...payload});
+  if(eid){
+    const r=S.recurring.find(x=>x.id===eid);
+    if(r) Object.assign(r,payload);
+    addAuditLog('recurring_update',{targetType:'recurring',targetId:eid,title:`Sửa template ${name}`,detail:`${cat} · ${fmt(amt)}`});
+  }
+  else{
+    const rec={id:uid(),...payload};
+    S.recurring.push(rec);
+    addAuditLog('recurring_create',{targetType:'recurring',targetId:rec.id,title:`Thêm template ${name}`,detail:`${cat} · ${fmt(amt)}`});
+  }
   fbSave(); closeOv('ov-rec'); renderRecList(); renderRecPick(); toast('Đã lưu: '+name);
 }
 async function delRec(id){
   if(!requireRole('admin')) return;
   const ok=await confirmAction({title:'Xóa template',message:'Template định kỳ sẽ bị xóa. Giao dịch đã tạo trước đó không bị ảnh hưởng.',confirmText:'Xóa template'});
   if(!ok) return;
+  const rec=S.recurring.find(x=>x.id===id);
   S.recurring=S.recurring.filter(x=>x.id!==id);
+  addAuditLog('recurring_delete',{targetType:'recurring',targetId:id,title:`Xóa template ${rec?rec.name:id}`});
   fbSave(); renderRecList(); renderRecPick(); toast('Đã xóa');
 }
 
@@ -5804,6 +6190,8 @@ function exportXL(){
   if(!requireRole('admin','Cần quyền Admin để xuất báo cáo')) return;
   const mo=parseInt(document.getElementById('exp-mo').value);
   const yr=parseInt(document.getElementById('exp-yr').value);
+  addAuditLog('report_export_excel',{targetType:'settings',title:'Xuất báo cáo Excel',detail:`Tháng ${mo}/${yr}`});
+  fbSave(true);
   const ym=`${yr}-${String(mo).padStart(2,'0')}`,lb=`Tháng ${mo}/${yr}`;
   const ses=S.transactions.filter(t=>t.type==='session'&&t.date.startsWith(ym));
   const top=S.transactions.filter(t=>t.type==='topup'&&t.date.startsWith(ym));

@@ -1099,7 +1099,15 @@ tr:hover td{background:rgba(255,255,255,.035)}
   box-shadow:none;
 }
 .bdg-debt:hover{background:rgba(239,68,68,.24);box-shadow:0 8px 18px rgba(239,68,68,.16)}
+.balance-table{table-layout:fixed}
+.balance-table th:nth-child(1),
+.balance-table td:nth-child(1){width:38%;text-align:left}
+.balance-table th:nth-child(2),
+.balance-table td:nth-child(2){width:30%;text-align:left}
+.balance-table th:nth-child(3),
+.balance-table td:nth-child(3){width:32%;text-align:center!important}
 .status-cell{text-align:center!important}
+.status-cell>*{margin-left:auto;margin-right:auto}
 .status-badge{justify-content:center;min-width:70px}
 body.ro .bdg-debt{
   pointer-events:auto;
@@ -2227,7 +2235,7 @@ nav.sidebar a.nav-link *{pointer-events:none}
   .balance-table th:nth-child(2),
   .balance-table td:nth-child(2){width:32%;text-align:left}
   .balance-table th:nth-child(3),
-  .balance-table td:nth-child(3){width:29%;text-align:right;padding-right:20px}
+  .balance-table td:nth-child(3){width:29%;text-align:center!important;padding-right:20px}
   .members-table th:nth-child(1),
   .members-table td:nth-child(1){width:42%;padding-left:20px}
   .members-table th:nth-child(2),
@@ -2445,23 +2453,6 @@ nav.sidebar a.nav-link *{pointer-events:none}
   <div class="ph">
     <div><h1>Thành viên</h1><p>Quản lý danh sách và số dư</p></div>
     <button class="btn bp wo" onclick="openAddMember()"><i data-lucide="user-plus"></i> Thêm</button>
-  </div>
-  <div class="card mb20">
-    <div class="sec"><i data-lucide="arrow-down-up"></i> Nạp / Trả tiền</div>
-    <div class="fg mb12">
-      <div><label>Thành viên</label><select id="topup-mem"></select></div>
-      <div><label>Số tiền (×1000)</label>
-        <div class="input-k">
-          <input type="number" id="topup-amt" placeholder="500 = 500,000₫" step="1000">
-          <button type="button" onclick="applyK('topup-amt')" class="btn-k">÷k</button>
-        </div>
-      </div>
-    </div>
-    <div class="mb12"><label>Ghi chú</label><input type="text" id="topup-note" placeholder="Nạp tiền tháng 6..."></div>
-    <div class="fl g8">
-      <button class="btn bp wo" onclick="doTopup(1)"><i data-lucide="plus-circle"></i> Nạp</button>
-      <button class="btn bg wo" onclick="doTopup(-1)"><i data-lucide="minus-circle"></i> Trừ</button>
-    </div>
   </div>
   <div class="card">
     <div class="sec"><i data-lucide="list"></i> Danh sách</div>
@@ -2714,6 +2705,7 @@ nav.sidebar a.nav-link *{pointer-events:none}
     <div class="mb12" id="edit-gift-pin-status"></div>
     <div class="fl g8 mt12">
       <button class="btn bp" onclick="saveEditMember()" style="flex:1"><i data-lucide="save"></i> Lưu</button>
+      <button class="btn bd" onclick="deleteEditingMember()"><i data-lucide="trash-2"></i> Xóa</button>
       <button class="btn bg" onclick="closeOv('ov-edit-member')">Hủy</button>
     </div>
   </div>
@@ -4646,7 +4638,7 @@ function renderDash(){
   refreshIcons();
 }
 
-function buildVietQrUrl(amount,note='Tra no CLB C1K'){
+function buildVietQrUrl(amount,note=''){
   const params=new URLSearchParams({
     amount:String(Math.max(0,Math.round(Number(amount)||0))),
     addInfo:note,
@@ -4663,7 +4655,7 @@ function openDebtQr(id){
   const bal=m.balance||0;
   if(bal>=0) return toast('Thành viên này không còn nợ','err');
   const amount=Math.abs(Math.round(bal));
-  const note=`${m.name} tra no CLB C1K`;
+  const note=m.name;
   currentPayQrAmount=amount;
   document.getElementById('payqr-name').textContent=m.name;
   document.getElementById('payqr-amount').textContent=fmt(amount);
@@ -4718,13 +4710,12 @@ function renderMembersList(){
         <td class="an hm">${fmt(m.totalOut||0)}</td>
         <td class="member-actions" style="white-space:nowrap;text-align:right">
           ${!m.isFixed?`<button class="btn bg btn-sm wo" onclick="openEditMember('${m.id}')"><i data-lucide="pencil"></i></button>`:''}
-          ${!m.isFixed?`<button class="btn bd btn-sm wo" onclick="delMember('${m.id}')" style="margin-left:4px"><i data-lucide="trash-2"></i></button>`:''}
         </td>
       </tr>`;
     }).join('')
     : '<tr><td colspan="5"><div class="empty"><i data-lucide="users"></i>Chưa có thành viên</div></td></tr>';
 }
-function renderTopupSel(){ const s=document.getElementById('topup-mem');const c=s.value;s.innerHTML=getSortedMembers().map(m=>`<option value="${m.id}">${escapeHTML(getMemberDisplayLabel(m))}</option>`).join('');if(c)s.value=c; }
+function renderTopupSel(){ const s=document.getElementById('topup-mem');if(!s)return;const c=s.value;s.innerHTML=getSortedMembers().map(m=>`<option value="${m.id}">${escapeHTML(getMemberDisplayLabel(m))}</option>`).join('');if(c)s.value=c; }
 function renderQMem(){ const s=document.getElementById('q-mem');if(!s)return;const c=s.value;s.innerHTML=getSortedMembers().map(m=>`<option value="${m.id}">${escapeHTML(getMemberDisplayLabel(m))}</option>`).join('');if(c)s.value=c; }
 
 function renderChips(){
@@ -5272,6 +5263,12 @@ function saveEditMember(){
   m.name=name;
   m.birthday=birthday;
   fbSave(); closeOv('ov-edit-member'); render(); toast('Đã cập nhật');
+}
+async function deleteEditingMember(){
+  if(!requireRole('admin')) return;
+  const id=document.getElementById('edit-mem-id').value;
+  closeOv('ov-edit-member');
+  await delMember(id);
 }
 
 function renderEditGiftPinStatus(m){

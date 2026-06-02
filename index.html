@@ -157,6 +157,8 @@ body{
 /* ─── LOGIN SCREEN ─── */
 #login-screen{position:fixed;inset:0;background:var(--bg);z-index:9000;display:none;align-items:center;justify-content:center;padding:20px;background-image:radial-gradient(ellipse at top,rgba(247,147,26,.08),transparent 50%),radial-gradient(ellipse at bottom,rgba(247,147,26,.04),transparent 50%)}
 #login-screen.show{display:flex;animation:fadeIn .4s var(--ease)}
+#login-screen.pin-mode{height:100dvh;min-height:100dvh;overflow:hidden;overscroll-behavior:none}
+#login-screen.pin-mode .login-card{animation:none;transform:translateZ(0);will-change:auto}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .login-card{width:100%;max-width:380px;background:var(--surf);border:1px solid var(--bord-2);border-radius:20px;padding:32px 28px;box-shadow:var(--sh-lg);animation:loginIn .5s var(--ease)}
 @keyframes loginIn{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
@@ -403,7 +405,6 @@ tr:hover td{background:rgba(255,255,255,.02)}
 #toast.show{transform:translateX(0);opacity:1}
 #toast.ok{border-left:3px solid var(--grn);color:var(--grn)}
 #toast.err{border-left:3px solid var(--red);color:var(--red)}
-#toast .toast-icon{width:15px;height:15px;flex-shrink:0}
 #toast .toast-msg{color:var(--txt);font-weight:500;font-size:12.5px}
 
 /* ─── MISC ─── */
@@ -604,6 +605,8 @@ body.role-superadmin .admin-tool{display:inline-flex!important}
   td{font-size:12.5px;padding:10px 10px}
 
   .login-card{max-width:100%;padding:26px 22px;border-radius:18px}
+  #login-screen.pin-mode{align-items:flex-start;padding-top:calc(env(safe-area-inset-top,0px) + 26px)}
+  #login-screen.pin-mode .login-card{max-height:calc(100dvh - env(safe-area-inset-top,0px) - 52px);overflow:hidden}
   .login-logo-wrap .c1k-logo{width:76px;height:76px}
   .login-title{font-size:18px}
   .login-input{padding:12px 14px;font-size:15px}
@@ -1140,15 +1143,56 @@ nav.sidebar a.nav-link.active{
   min-width:260px;
   max-width:min(420px,calc(100vw - 28px));
   padding:12px 14px;
-  border-radius:18px;
-  background:rgba(24,24,32,.88);
-  box-shadow:0 22px 54px rgba(0,0,0,.38);
+  border-radius:22px;
+  background:
+    linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.045) 44%,rgba(255,255,255,.075)),
+    rgba(18,18,24,.72);
+  border:1px solid rgba(255,255,255,.13);
+  box-shadow:0 22px 54px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.14);
+  backdrop-filter:blur(22px) saturate(170%);
+  -webkit-backdrop-filter:blur(22px) saturate(170%);
 }
-#toast.ok{border-left:0;border-color:rgba(34,197,94,.22)}
-#toast.err{border-left:0;border-color:rgba(239,68,68,.26)}
-#toast.warn{border-color:rgba(247,147,26,.28);color:var(--acc)}
-#toast .toast-msg{line-height:1.35}
+#toast::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background:linear-gradient(110deg,transparent 0%,rgba(255,255,255,.12) 42%,transparent 66%);
+  transform:translateX(-120%);
+  pointer-events:none;
+}
+#toast.show::before{animation:toastSheen 1.15s var(--ease)}
+#toast.ok{border-left:0;border-color:rgba(34,197,94,.24)}
+#toast.err{border-left:0;border-color:rgba(239,68,68,.28)}
+#toast.warn{border-left:0;border-color:rgba(255,159,28,.28);color:var(--acc)}
+#toast.info{border-left:0;border-color:rgba(148,163,184,.22)}
+#toast .toast-orb{
+  width:22px;
+  height:22px;
+  border-radius:999px;
+  flex:0 0 22px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 10px 22px rgba(0,0,0,.24);
+}
+#toast .toast-orb::before{
+  content:'';
+  width:8px;
+  height:8px;
+  border-radius:999px;
+  background:var(--txt-3);
+  box-shadow:0 0 14px rgba(255,255,255,.22);
+}
+#toast.ok .toast-orb::before{background:var(--grn);box-shadow:0 0 16px rgba(34,197,94,.58)}
+#toast.err .toast-orb::before{background:var(--red);box-shadow:0 0 16px rgba(239,68,68,.58)}
+#toast.warn .toast-orb::before{background:var(--acc);box-shadow:0 0 16px rgba(255,159,28,.58)}
+#toast .toast-msg{line-height:1.35;position:relative;z-index:1}
 .toast-action{
+  position:relative;
+  z-index:1;
   margin-left:auto;
   border:1px solid rgba(247,147,26,.34);
   background:rgba(247,147,26,.12);
@@ -1161,6 +1205,7 @@ nav.sidebar a.nav-link.active{
   cursor:pointer;
 }
 .toast-action:active{transform:scale(.98)}
+@keyframes toastSheen{to{transform:translateX(120%)}}
 
 .history-filter-grid{
   display:grid;
@@ -2278,6 +2323,94 @@ nav.sidebar a.nav-link *{pointer-events:none}
   .analysis-row,.audit-row{grid-template-columns:1fr}
   .audit-type{justify-self:start}
 }
+@media(min-width:1024px){
+  body.dash-active main{
+    max-width:none;
+  }
+  #page-dash .dash-grid{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(380px,420px);
+    gap:20px;
+    align-items:start;
+  }
+  #page-dash .dash-main,
+  #page-dash .dash-side{
+    min-width:0;
+  }
+  #page-dash .dash-side{
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+  }
+  #page-dash .dash-side .card,
+  #page-dash .dash-main .card{
+    margin-bottom:0;
+  }
+  #page-dash .dash-side #recent table{
+    display:block;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+}
+@media(max-width:1023px){
+  #page-dash .dash-grid{
+    display:block;
+  }
+  #page-dash .dash-main,
+  #page-dash .dash-side{
+    min-width:0;
+  }
+}
+.payment-card{
+  background:linear-gradient(180deg,rgba(22,22,21,.98),rgba(17,17,16,.98))!important;
+  border-color:rgba(255,255,255,.075)!important;
+  box-shadow:var(--sh)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  isolation:isolate;
+  contain:paint;
+  background-clip:padding-box;
+}
+.payment-card:hover{border-color:rgba(255,255,255,.075)!important}
+.payment-card::before{display:none!important}
+.payment-card .sec{
+  color:var(--acc)!important;
+}
+.payment-bank-box{
+  background:rgba(255,255,255,.045);
+  border:1px solid var(--bord);
+  border-radius:10px;
+  padding:13px 14px;
+  margin-bottom:10px;
+}
+#toast{
+  top:auto!important;
+  right:18px!important;
+  bottom:18px!important;
+  left:auto!important;
+  transform:translateY(120%)!important;
+  opacity:0;
+  transition:transform .28s var(--ease),opacity .22s var(--ease),border-color .2s var(--ease)!important;
+}
+#toast.show{
+  transform:translateY(0)!important;
+  opacity:1;
+}
+@media(max-width:768px){
+  #toast{
+    top:auto!important;
+    right:12px!important;
+    bottom:calc(104px + env(safe-area-inset-bottom,0px))!important;
+    left:12px!important;
+    max-width:none!important;
+    min-width:0!important;
+    transform:translateY(120%)!important;
+  }
+  #toast.show{
+    transform:translateY(0)!important;
+    opacity:1;
+  }
+}
 @media(prefers-reduced-motion:reduce){
   .birthday-banner,
   .birthday-banner::before,
@@ -2294,7 +2427,7 @@ nav.sidebar a.nav-link *{pointer-events:none}
 }
 </style>
 </head>
-<body class="ro">
+<body class="ro dash-active">
 
 <!-- SPLASH -->
 <div id="splash">
@@ -2428,6 +2561,8 @@ nav.sidebar a.nav-link *{pointer-events:none}
   <div id="birthday-banner-slot"></div>
   <div class="sgrid" id="stat-grid"></div>
 
+  <div class="dash-grid">
+    <div class="dash-main">
   <div class="card mb20">
     <div class="sec"><i data-lucide="users"></i> Công nợ thành viên</div>
     <table class="balance-table">
@@ -2435,8 +2570,11 @@ nav.sidebar a.nav-link *{pointer-events:none}
       <tbody id="tbl-balance"></tbody>
     </table>
   </div>
+    </div>
 
-  <div class="card mb20" style="border-color:rgba(247,147,26,.18);background:rgba(247,147,26,.035)">
+    <div class="dash-side">
+
+  <div class="card payment-card mb20">
     <div class="sec" style="color:var(--acc)"><i data-lucide="credit-card"></i> Thông tin thanh toán</div>
     <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
       <div style="flex-shrink:0;text-align:center">
@@ -2446,7 +2584,7 @@ nav.sidebar a.nav-link *{pointer-events:none}
         <div style="font-size:10px;color:var(--mut);margin-top:5px">Quét bằng app ngân hàng</div>
       </div>
       <div style="flex:1;min-width:220px">
-        <div style="background:rgba(247,147,26,.06);border:1px solid rgba(247,147,26,.18);border-radius:10px;padding:13px 14px;margin-bottom:10px">
+        <div class="payment-bank-box">
           <div style="background:#005c2e;border-radius:4px;padding:2px 8px;font-size:10.5px;font-weight:800;color:#fff;display:inline-block;margin-bottom:9px;letter-spacing:.05em">VIETCOMBANK</div>
           <div style="margin-bottom:7px">
             <div style="font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;font-weight:600">Số tài khoản</div>
@@ -2469,6 +2607,8 @@ nav.sidebar a.nav-link *{pointer-events:none}
   </div>
 
   <div class="card"><div class="sec"><i data-lucide="clock"></i> Giao dịch gần đây</div><div id="recent"></div></div>
+    </div>
+  </div>
 </div>
 
 <!-- MEMBERS -->
@@ -2685,7 +2825,7 @@ nav.sidebar a.nav-link *{pointer-events:none}
       <button class="btn bp" onclick="copyLink()"><i data-lucide="copy"></i> Copy link</button>
       <div id="link-box" style="display:none" class="mt12">
         <input id="link-val" type="text" readonly style="font-size:12px">
-        <p class="tm mt8">✅ Đã copy!</p>
+      <p class="tm mt8">Đã copy.</p>
       </div>
     </div>
     <div class="card mb20">
@@ -3035,7 +3175,9 @@ const PIN_TRUST_KEY = 'clb_pin_device_trusted';
 const PIN_FAIL_KEY = 'clb_pin_fail_count';
 const PIN_LOCK_KEY = 'clb_pin_locked_until';
 const PIN_LEN_KEY = 'clb_pin_length';
-const QUICK_PIN_KEYS = [PIN_ENABLED_KEY,PIN_HASH_KEY,PIN_SALT_KEY,PIN_ROLE_KEY,PIN_TRUST_KEY,PIN_FAIL_KEY,PIN_LOCK_KEY,PIN_LEN_KEY];
+const PIN_AUTH_CIPHER_KEY = 'clb_pin_auth_cipher';
+const PIN_AUTH_IV_KEY = 'clb_pin_auth_iv';
+const QUICK_PIN_KEYS = [PIN_ENABLED_KEY,PIN_HASH_KEY,PIN_SALT_KEY,PIN_ROLE_KEY,PIN_TRUST_KEY,PIN_FAIL_KEY,PIN_LOCK_KEY,PIN_LEN_KEY,PIN_AUTH_CIPHER_KEY,PIN_AUTH_IV_KEY];
 let splitMode = 'split';
 let selCat = '🎾 Tennis';
 let recMode = 'fixed';
@@ -3066,6 +3208,7 @@ let quickPinPasswordSessionTrusted = false;
 let quickPinPromptRole = 'admin';
 let pinLoginBuffer = '';
 let pinLoginBusy = false;
+let quickPinLastAdminPassword = '';
 let fbStarted = false;
 let fbFirstDataLoaded = false;
 let fbMaintenanceTimer = null;
@@ -3317,6 +3460,8 @@ function hasQuickPin(){
   return localStorage.getItem(PIN_ENABLED_KEY)==='true'
     && !!localStorage.getItem(PIN_HASH_KEY)
     && !!localStorage.getItem(PIN_SALT_KEY)
+    && !!localStorage.getItem(PIN_AUTH_CIPHER_KEY)
+    && !!localStorage.getItem(PIN_AUTH_IV_KEY)
     && !!localStorage.getItem(PIN_TRUST_KEY)
     && ['admin','superadmin'].includes(localStorage.getItem(PIN_ROLE_KEY)||'');
 }
@@ -3349,6 +3494,47 @@ function markQuickPinDeviceTrusted(role=currentRole){
   quickPinPasswordSessionTrusted=true;
   localStorage.setItem(PIN_TRUST_KEY,'true');
   if(['admin','superadmin'].includes(role)) localStorage.setItem(PIN_ROLE_KEY,role);
+}
+function rememberQuickPinAuthPassword(password){
+  quickPinLastAdminPassword=password||'';
+}
+function bytesToB64(bytes){
+  return btoa(String.fromCharCode(...bytes));
+}
+function b64ToBytes(str){
+  return Uint8Array.from(atob(str),c=>c.charCodeAt(0));
+}
+async function quickPinCryptoKey(pin){
+  if(!window.crypto?.subtle) throw new Error('pin-crypto-not-supported');
+  const salt=localStorage.getItem(PIN_SALT_KEY);
+  if(!salt) throw new Error('pin-auth-missing');
+  const raw=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(`${salt}:auth:${pin}`));
+  return crypto.subtle.importKey('raw',raw,{name:'AES-GCM'},false,['encrypt','decrypt']);
+}
+async function storeQuickPinAuthPassword(password,pin){
+  if(!password||!pin) return false;
+  const key=await quickPinCryptoKey(pin);
+  const iv=new Uint8Array(12);
+  crypto.getRandomValues(iv);
+  const cipher=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(password));
+  localStorage.setItem(PIN_AUTH_IV_KEY,bytesToB64(iv));
+  localStorage.setItem(PIN_AUTH_CIPHER_KEY,bytesToB64(new Uint8Array(cipher)));
+  return true;
+}
+async function readQuickPinAuthPassword(pin){
+  const iv=localStorage.getItem(PIN_AUTH_IV_KEY);
+  const cipher=localStorage.getItem(PIN_AUTH_CIPHER_KEY);
+  if(!iv||!cipher) throw new Error('pin-auth-missing');
+  const key=await quickPinCryptoKey(pin);
+  const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64ToBytes(iv)},key,b64ToBytes(cipher));
+  return new TextDecoder().decode(plain);
+}
+async function signInAdminForQuickPin(pin){
+  if(!window._fbSignInAdmin) return false;
+  const password=await readQuickPinAuthPassword(pin);
+  await window._fbSignInAdmin(password);
+  rememberQuickPinAuthPassword(password);
+  return true;
 }
 function clearQuickPinLock(){
   localStorage.removeItem(PIN_FAIL_KEY);
@@ -3399,6 +3585,7 @@ async function verifyQuickPin(pin){
 }
 async function saveQuickPin(pin,role=currentRole){
   if(!canSetupQuickPin()) return false;
+  if(!quickPinLastAdminPassword) return false;
   const safeRole=role==='superadmin'?'superadmin':'admin';
   const salt=createSalt();
   const hash=await hashPin(pin,salt);
@@ -3408,6 +3595,7 @@ async function saveQuickPin(pin,role=currentRole){
   localStorage.setItem(PIN_ROLE_KEY,safeRole);
   localStorage.setItem(PIN_TRUST_KEY,'true');
   localStorage.setItem(PIN_LEN_KEY,String(pin.length));
+  await storeQuickPinAuthPassword(quickPinLastAdminPassword,pin);
   clearQuickPinLock();
   refreshPinLoginUI();
   renderQuickPinSettings();
@@ -3447,6 +3635,13 @@ function handlePinLoginKey(e){
   if(e.key==='Enter'){e.preventDefault();loginWithQuickPin();return;}
   if(/^\d$/.test(e.key)){e.preventDefault();addPinDigit(e.key);}
 }
+document.addEventListener('keydown',e=>{
+  if(e.defaultPrevented) return;
+  const screen=document.getElementById('login-screen');
+  const pinPanel=document.getElementById('ltab-c-pin');
+  if(!screen?.classList.contains('show')||pinPanel?.style.display!=='block') return;
+  handlePinLoginKey(e);
+});
 function syncPinInputFromKeyboard(){
   const input=document.getElementById('login-pin');
   pinLoginBuffer=(input?.value||'').replace(/\D/g,'').slice(0,6);
@@ -3533,9 +3728,14 @@ async function submitQuickPinModal(){
     const verify=(document.getElementById('quick-pin-verify').value||'').trim();
     if(!verify){err.textContent='Nhập mật khẩu Admin hoặc PIN cũ';return;}
     let ok=await verifyQuickPinSecret(verify);
+    if(ok){
+      try{ quickPinLastAdminPassword=await readQuickPinAuthPassword(verify); }
+      catch(e){ ok=false; }
+    }
     if(!ok&&window._fbSignInAdmin){
       try{
         await window._fbSignInAdmin(verify);
+        rememberQuickPinAuthPassword(verify);
         ok=true;
       }catch(e){
         ok=false;
@@ -3608,10 +3808,22 @@ async function loginWithQuickPin(auto=false){
     return;
   }
   const role=result.role==='superadmin'?'superadmin':'admin';
-  const fbUser=window._fbCurrentUser&&window._fbCurrentUser();
-  if(!fbUser||fbUser.isAnonymous){
-    if(err) err.textContent='Phiên Firebase Admin đã hết. Vui lòng đăng nhập mật khẩu Admin.';
-    toast('Cần đăng nhập mật khẩu Admin lại để kết nối Firebase','err');
+  try{
+    showAppLoading('Đang mở khóa bằng PIN','Đang xác thực lại Firebase và đồng bộ dữ liệu...');
+    if(window._fbSignOut) await window._fbSignOut().catch(()=>{});
+    await signInAdminForQuickPin(pin);
+  }catch(e){
+    console.error(e);
+    hideAppLoading();
+    if((e&&e.code||'').includes('auth/invalid-credential')||(e&&e.code||'').includes('auth/wrong-password')){
+      clearQuickPinData();
+      refreshPinLoginUI();
+      if(err) err.textContent='Mật khẩu Admin đã đổi. Hãy đăng nhập bằng mật khẩu để tạo PIN lại.';
+      toast('Mật khẩu Admin đã đổi, cần đăng nhập mật khẩu lại','err');
+    }else{
+      if(err) err.textContent='PIN chưa thể đăng nhập Firebase. Hãy đăng nhập mật khẩu Admin một lần.';
+      toast('Cần đăng nhập mật khẩu Admin một lần để cập nhật PIN','err');
+    }
     clearPinLoginBuffer();
     switchLoginTab('admin');
     return;
@@ -3676,14 +3888,20 @@ function getGiftFromTxn(t){
 function getGiftFeedCollapsedLimit(){ return 3; }
 function getGiftFeedExpandedLimit(){ return 8; }
 
+function cleanToastMessage(msg){
+  return (msg||'').toString()
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\uFE0F]/gu,'')
+    .replace(/\u21A9/g,'')
+    .replace(/\s{2,}/g,' ')
+    .trim();
+}
 function toast(msg,type='ok',opts={}){
   const t=document.getElementById('toast');
-  const icon = type==='ok' ? 'check-circle-2' : type==='err' ? 'alert-circle' : type==='warn' ? 'alert-triangle' : 'info';
-  t.innerHTML = `<i data-lucide="${icon}" class="toast-icon"></i><span class="toast-msg">${escapeHTML(msg)}</span>${opts.actionText?`<button class="toast-action" id="toast-action">${escapeHTML(opts.actionText)}</button>`:''}`;
+  const text=cleanToastMessage(msg);
+  t.innerHTML = `<span class="toast-orb" aria-hidden="true"></span><span class="toast-msg">${escapeHTML(text)}</span>${opts.actionText?`<button class="toast-action" id="toast-action">${escapeHTML(opts.actionText)}</button>`:''}`;
   t.className='show '+type;
   const action=document.getElementById('toast-action');
   if(action && opts.onAction) action.onclick=()=>{clearTimeout(t._t);t.className='';opts.onAction();};
-  refreshIcons();
   clearTimeout(t._t);
   t._t=setTimeout(()=>t.className='',opts.duration||2800);
   if(type==='ok') playSound('ok'); else if(type==='err') playSound('err');
@@ -3708,7 +3926,7 @@ function toggleSound(){
   soundOn=!soundOn;
   localStorage.setItem(SOUND_KEY,soundOn?'on':'off');
   document.getElementById('sound-toggle')?.classList.toggle('on',soundOn);
-  toast(soundOn?'🔊 Bật âm thanh':'🔇 Tắt âm thanh');
+  toast(soundOn?'Bật âm thanh':'Tắt âm thanh');
 }
 function openSettingsModal(){
   if(!isAdmin) return toast('Cần đăng nhập Admin để mở cài đặt','err');
@@ -4230,7 +4448,9 @@ function buildSnapshot(ym){
 // LOGIN
 // ═══════════════════════════════════════════════════════════════
 function openLoginScreen(){
-  document.getElementById('login-screen').classList.add('show');
+  const screen=document.getElementById('login-screen');
+  screen.classList.add('show');
+  screen.classList.remove('pin-mode');
   document.getElementById('login-pw').value='';
   document.getElementById('login-err').textContent='';
   document.getElementById('super-pw1')&&(document.getElementById('super-pw1').value='');
@@ -4242,14 +4462,13 @@ function openLoginScreen(){
   if(hasQuickPin()){
     clearPinLoginBuffer();
     switchLoginTab('pin');
-    setTimeout(()=>document.getElementById('login-pin')?.focus({preventScroll:true}),160);
   }else{
     switchLoginTab('admin');
-    setTimeout(()=>document.getElementById('login-pw').focus(),300);
+    setTimeout(()=>document.getElementById('login-pw')?.focus({preventScroll:true}),300);
   }
 }
 function closeLoginScreen(){
-  document.getElementById('login-screen').classList.remove('show');
+  document.getElementById('login-screen').classList.remove('show','pin-mode');
   document.getElementById('main-shell').style.display='flex';
   document.getElementById('abar').style.display='flex';
 }
@@ -4273,7 +4492,7 @@ async function doLogin(){
     toast('Đăng nhập thành công!');
     haptic(20);
   }catch(e){
-    document.getElementById('login-err').textContent='❌ Sai mật khẩu!';
+    document.getElementById('login-err').textContent='Sai mật khẩu!';
     document.getElementById('login-pw').value='';
     document.getElementById('login-pw').focus();
     haptic([40,30,40]);
@@ -4301,10 +4520,11 @@ async function changePwLogin(){
     return;
   }
   localStorage.removeItem(SK);
+  clearQuickPinData();
   document.getElementById('cpw-new').value='';
   document.getElementById('cpw-pw2').value='';
   err.style.color='var(--grn)';
-  err.textContent='✅ Đã đổi mật khẩu!';
+  err.textContent='Đã đổi mật khẩu!';
   setTimeout(()=>{err.style.color='var(--red)';err.textContent='';switchLoginTab('admin');},2000);
 }
 function doLogout(){
@@ -4340,6 +4560,7 @@ async function changePw(){
     return toast(firebaseUserMessage(e,'Sai mật khẩu cấp 2 hoặc không đổi được mật khẩu.'),'err');
   }
   localStorage.removeItem(SK);
+  clearQuickPinData();
   document.getElementById('new-pw').value='';
   document.getElementById('pw2').value='';
   toast('Đã đổi mật khẩu! Cần đăng nhập lại.');
@@ -4353,6 +4574,7 @@ function togglePwVis(id,btn){
 
 function switchLoginTab(t){
   if(t==='pin'&&!hasQuickPin()) t='admin';
+  document.getElementById('login-screen')?.classList.toggle('pin-mode',t==='pin');
   document.getElementById('ltab-admin')?.classList.toggle('on',t==='admin');
   document.getElementById('ltab-super')?.classList.toggle('on',t==='super');
   document.getElementById('ltab-pin')?.classList.toggle('on',t==='pin');
@@ -4365,7 +4587,6 @@ function switchLoginTab(t){
   if(t==='pin'){
     clearPinLoginBuffer();
     document.getElementById('pin-login-err').textContent=isQuickPinLocked()?quickPinLockMessage():'';
-    setTimeout(()=>document.getElementById('login-pin')?.focus({preventScroll:true}),120);
   }
   refreshIcons();
 }
@@ -4381,6 +4602,9 @@ async function doLogin(role='admin'){
     if(window._fbSignOut) await window._fbSignOut().catch(()=>{});
     if(!window._fbSignInAdmin) throw new Error('firebase-not-ready');
     await window._fbSignInAdmin(p1);
+    rememberQuickPinAuthPassword(p1);
+    const shouldRefreshPin=localStorage.getItem(PIN_ENABLED_KEY)==='true'&&!localStorage.getItem(PIN_AUTH_CIPHER_KEY);
+    if(shouldRefreshPin) clearQuickPinData();
     if(role==='superadmin'){
       if(!window._fbVerifyLevel2) throw new Error('firebase-not-ready');
       await window._fbVerifyLevel2(p2);
@@ -4397,7 +4621,7 @@ async function doLogin(role='admin'){
     document.getElementById('super-pw1')&&(document.getElementById('super-pw1').value='');
     document.getElementById('super-pw2')&&(document.getElementById('super-pw2').value='');
     toast(role==='superadmin'?'Đã đăng nhập Super Admin':'Đã đăng nhập Admin');
-    setTimeout(()=>promptQuickPinSetup(role),350);
+    setTimeout(()=>promptQuickPinSetup(role),shouldRefreshPin?180:350);
     haptic(20);
   }catch(e){
     console.error(e);
@@ -4501,6 +4725,7 @@ function go(id){
   document.querySelectorAll('nav.sidebar a.nav-link').forEach(a=>a.classList.remove('active'));
   page.classList.add('active');
   nav.classList.add('active');
+  document.body.classList.toggle('dash-active',id==='dash');
   if(id==='history'){ fillMonths(); fillPersonFilter(); fillCatFilter(); fillAnalysisMonths(); renderHistory(); renderAnalysis(); renderAuditLog(); renderExpPrev(); renderPdfPreview(); moveHistTabInd(); }
   if(id==='record'){ renderChips(); renderRecPick(); renderQMem(); moveRecTabInd(); }
   if(id==='leaderboard'){ fillLbMonths(); renderLeaderboard(); }
@@ -4788,7 +5013,7 @@ function quickPayDash(id){
   const amt=Math.abs(bal);
   m.balance=0; m.totalIn=(m.totalIn||0)+amt;
   S.transactions.push({id:uid(),date:td(),type:'topup',desc:`${m.name} trả nợ`,category:'',amount:amt,memberIds:[id]});
-  fbSave(); render(); toast(`✅ ${m.name} đã trả ${fmt(amt)}`);
+  fbSave(); render(); toast(`${m.name} đã trả ${fmt(amt)}`);
   haptic([20,20,40]);
   fireConfetti();
 }
@@ -5755,7 +5980,7 @@ function openEnterGiftPinModal(context){
 function openClaimGiftModal(txnId){
   const t=S.transactions.find(x=>x.id===txnId);
   if(!t||t.status==='cancelled') return toast('Món quà này đã được xử lý','err');
-  if(!canSelfClaimGift(t)) return toast('Quá 30 giây rồi, nhờ admin hoàn tiền nha 😅','err');
+  if(!canSelfClaimGift(t)) return toast('Quá 30 giây rồi, nhờ admin hoàn tiền nha','err');
   giftPinContext={mode:'claim',txnId};
   const giver=getMemberById(t.fromId);
   const gift=getGiftFromTxn(t);
@@ -5788,17 +6013,17 @@ async function submitGiftPinModal(){
       if(ok) closeOv('ov-gift-pin');
     }else if(giftPinContext.mode==='send'){
       const okPin=await verifyMemberGiftPin(giftPinContext.fromId,pin);
-      if(!okPin){toast('Sai mã PIN rồi 😅','err');setGiftPinError('Sai mã PIN');return;}
+      if(!okPin){toast('Sai mã PIN','err');setGiftPinError('Sai mã PIN');return;}
       const ok=await performBirthdayGift(giftPinContext);
       if(ok) closeOv('ov-gift-pin');
     }else if(giftPinContext.mode==='claim'){
       const t=S.transactions.find(x=>x.id===giftPinContext.txnId);
       if(!t||t.status==='cancelled'){toast('Món quà này đã được xử lý','err');closeOv('ov-gift-pin');return;}
-      if(!canSelfClaimGift(t)){toast('Quá 30 giây rồi, nhờ admin hoàn tiền nha 😅','err');closeOv('ov-gift-pin');return;}
+      if(!canSelfClaimGift(t)){toast('Quá 30 giây rồi, nhờ admin hoàn tiền nha','err');closeOv('ov-gift-pin');return;}
       const okPin=await verifyMemberGiftPin(t.fromId,pin);
-      if(!okPin){toast('Sai mã PIN rồi 😅','err');setGiftPinError('Sai mã PIN');return;}
+      if(!okPin){toast('Sai mã PIN','err');setGiftPinError('Sai mã PIN');return;}
       const ok=cancelBirthdayGift(t.id,'self');
-      if(ok){toast(`${getMemberName(t.fromId)} đã đòi lại quà sinh nhật 😆`);closeOv('ov-gift-pin');}
+      if(ok){toast(`${getMemberName(t.fromId)} đã đòi lại quà sinh nhật`);closeOv('ov-gift-pin');}
     }
   }catch(e){
     if(e.message!=='invalid-pin') console.error(e);
@@ -5923,7 +6148,7 @@ function saveSession(){
     addAuditLog('transaction_session',{targetType:'transaction',targetId:txn.id,title:`Ghi buổi ${desc}`,detail:`${mids.length} người · ${fmt(totalAmt)}`});
     mids.forEach(id=>{const m=S.members.find(x=>x.id===id);if(m){m.balance-=perPerson;m.totalOut=(m.totalOut||0)+perPerson;}});
     fbSave(); render(); resetSessionForm();
-    toast(`✅ ${mids.length} người × ${fmt(perPerson)} = ${fmt(totalAmt)}`,'ok',{duration:8000,actionText:'Copy thông báo',onAction:()=>copyMessengerText(txn.id)});
+    toast(`${mids.length} người × ${fmt(perPerson)} = ${fmt(totalAmt)}`,'ok',{duration:8000,actionText:'Copy thông báo',onAction:()=>copyMessengerText(txn.id)});
     return;
   }
   mids.forEach(id=>{const m=S.members.find(x=>x.id===id);if(m){m.balance-=perPerson;m.totalOut=(m.totalOut||0)+perPerson;}});
@@ -5932,7 +6157,7 @@ function saveSession(){
   S.transactions.push(txn);
   addAuditLog('transaction_session',{targetType:'transaction',targetId:txn.id,title:`Ghi buổi ${desc}`,detail:`${mids.length} người · ${fmt(totalAmt)}`});
   fbSave(); render(); resetSessionForm();
-  toast(`✅ ${mids.length} người × ${fmt(perPerson)} = ${fmt(totalAmt)}`,'ok',{duration:8000,actionText:'Copy thông báo',onAction:()=>copyMessengerText(txn.id)});
+  toast(`${mids.length} người × ${fmt(perPerson)} = ${fmt(totalAmt)}`,'ok',{duration:8000,actionText:'Copy thông báo',onAction:()=>copyMessengerText(txn.id)});
 }
 function resetSessionForm(){
   document.getElementById('sess-desc').value='';
@@ -6180,11 +6405,11 @@ function copyLink(){
   navigator.clipboard.writeText(l).catch(()=>{});
   document.getElementById('link-val').value=l;
   document.getElementById('link-box').style.display='block';
-  toast('✅ Đã copy link!');
+  toast('Đã copy link');
 }
 function copySTK(){
   navigator.clipboard.writeText('9933659414').catch(()=>{});
-  toast('✅ Đã copy STK');
+  toast('Đã copy STK');
 }
 function exportXL(){
   if(!requireRole('admin','Cần quyền Admin để xuất báo cáo')) return;
@@ -6215,12 +6440,12 @@ function exportXL(){
   });
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s3),'Nạp & Trừ');
   XLSX.writeFile(wb,`CLB-C1K-${lb.replace(' ','-')}.xlsx`);
-  toast('📥 Đã tải Excel!');
+  toast('Đã tải Excel');
 }
 
 async function shareDashboardCard(){
   const target=document.getElementById('page-dash');
-  toast('📸 Đang tạo ảnh...');
+  toast('Đang tạo ảnh...');
   try{
     const canvas=await html2canvas(target,{backgroundColor:'#0a0a0b',scale:2,useCORS:true,logging:false});
     canvas.toBlob(blob=>{
@@ -6228,13 +6453,13 @@ async function shareDashboardCard(){
       const a=document.createElement('a');
       a.href=url; a.download=`CLB-C1K-Dashboard-${td()}.png`; a.click();
       setTimeout(()=>URL.revokeObjectURL(url),1000);
-      toast('✅ Đã lưu ảnh');
+      toast('Đã lưu ảnh');
     });
   }catch(e){console.error(e);toast('Lỗi tạo ảnh','err');}
 }
 async function shareLeaderboardCard(){
   const target=document.getElementById('page-leaderboard');
-  toast('📸 Đang tạo ảnh BXH...');
+  toast('Đang tạo ảnh BXH...');
   try{
     const canvas=await html2canvas(target,{backgroundColor:'#0a0a0b',scale:2,useCORS:true,logging:false});
     canvas.toBlob(blob=>{
@@ -6242,7 +6467,7 @@ async function shareLeaderboardCard(){
       const a=document.createElement('a');
       a.href=url; a.download=`CLB-C1K-BXH-${td()}.png`; a.click();
       setTimeout(()=>URL.revokeObjectURL(url),1000);
-      toast('✅ Đã lưu BXH');
+      toast('Đã lưu BXH');
     });
   }catch(e){console.error(e);toast('Lỗi tạo ảnh','err');}
 }

@@ -2329,7 +2329,7 @@ nav.sidebar a.nav-link *{pointer-events:none}
   }
   #page-dash .dash-grid{
     display:grid;
-    grid-template-columns:minmax(0,1fr) minmax(380px,420px);
+    grid-template-columns:minmax(0,1fr) minmax(360px,420px);
     gap:20px;
     align-items:start;
   }
@@ -2341,15 +2341,11 @@ nav.sidebar a.nav-link *{pointer-events:none}
     display:flex;
     flex-direction:column;
     gap:20px;
+    height:clamp(560px,calc(100vh - 270px),calc(100vh - 24px));
   }
   #page-dash .dash-side .card,
   #page-dash .dash-main .card{
     margin-bottom:0;
-  }
-  #page-dash .dash-side #recent table{
-    display:block;
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
   }
 }
 @media(max-width:1023px){
@@ -2359,6 +2355,7 @@ nav.sidebar a.nav-link *{pointer-events:none}
   #page-dash .dash-main,
   #page-dash .dash-side{
     min-width:0;
+    min-height:0;
   }
 }
 .payment-card{
@@ -2367,8 +2364,10 @@ nav.sidebar a.nav-link *{pointer-events:none}
   box-shadow:var(--sh)!important;
   backdrop-filter:none!important;
   -webkit-backdrop-filter:none!important;
+  flex:0 0 auto;
   isolation:isolate;
-  contain:paint;
+  contain:none!important;
+  overflow:visible!important;
   background-clip:padding-box;
 }
 .payment-card:hover{border-color:rgba(255,255,255,.075)!important}
@@ -2376,12 +2375,199 @@ nav.sidebar a.nav-link *{pointer-events:none}
 .payment-card .sec{
   color:var(--acc)!important;
 }
-.payment-bank-box{
+.payment-card-body,
+.payment-compact{
+  display:grid;
+  gap:12px;
+}
+.payment-bank-box-compact{
   background:rgba(255,255,255,.045);
-  border:1px solid var(--bord);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  padding:16px;
+  display:grid;
+  gap:13px;
+}
+.payment-bank-badge{
+  width:max-content;
+  background:#007a3d;
+  border-radius:7px;
+  padding:4px 10px;
+  font-size:11px;
+  font-weight:900;
+  color:#fff;
+  letter-spacing:.04em;
+}
+.payment-field{
+  display:grid;
+  gap:3px;
+}
+.payment-label{
+  font-size:10px;
+  color:var(--mut);
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  font-weight:700;
+}
+.payment-account-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.payment-account-no{
+  font-family:'JetBrains Mono',monospace;
+  font-size:17px;
+  font-weight:900;
+  color:var(--txt);
+}
+.payment-owner{
+  font-size:14px;
+  font-weight:900;
+  color:var(--txt);
+}
+.payment-copy-btn{
+  height:28px;
+  padding:3px 9px;
+  border-radius:999px;
+}
+.payment-copy-btn svg{
+  width:11px;
+  height:11px;
+  display:inline-block;
+  vertical-align:middle;
+}
+.payment-qr-btn{
+  width:max-content;
+}
+.payment-qr-btn svg{
+  width:13px;
+  height:13px;
+}
+.payment-warning-box{
+  width:100%;
+}
+.payment-qr-modal{
+  max-width:380px;
+  text-align:center;
+}
+.payment-qr-modal .mt{
+  justify-content:center;
+}
+.payment-qr-large-box{
+  background:#fff;
+  border-radius:18px;
+  padding:14px;
+  display:inline-block;
+  margin:8px auto 14px;
+  box-shadow:0 14px 36px rgba(0,0,0,.35);
+}
+.payment-qr-large-box img{
+  width:min(300px,74vw);
+  height:auto;
+  max-height:min(356px,82vh);
+  display:block;
   border-radius:10px;
-  padding:13px 14px;
-  margin-bottom:10px;
+  object-fit:contain;
+}
+.payment-qr-info{
+  display:grid;
+  gap:8px;
+  text-align:left;
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;
+  padding:12px;
+  margin-bottom:12px;
+}
+.payment-qr-info div{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  font-size:12px;
+  color:var(--txt-3);
+}
+.payment-qr-info b{
+  color:var(--txt);
+  text-align:right;
+}
+.recent-card{
+  flex:1 1 auto;
+  display:flex;
+  flex-direction:column;
+  min-height:320px;
+  overflow:visible;
+}
+.recent-head{
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+.recent-head,
+.recent-head span{
+  display:flex;
+}
+.recent-head span{
+  align-items:center;
+  gap:7px;
+  min-width:0;
+}
+.recent-more{
+  flex-shrink:0;
+  min-height:30px;
+  padding:5px 9px;
+}
+.recent-more svg{
+  width:12px;
+  height:12px;
+}
+.recent-body{
+  flex:0 0 auto;
+  min-height:0;
+  overflow:visible;
+  -webkit-overflow-scrolling:touch;
+  padding-right:0;
+}
+.recent-body table{
+  min-width:360px;
+}
+@media(max-width:768px){
+  .payment-warning-box{
+    margin-top:12px;
+  }
+  .payment-qr-btn{
+    width:100%;
+    justify-content:center;
+  }
+  .payment-qr-modal{
+    max-width:100%;
+  }
+  .payment-qr-large-box img{
+    width:min(300px,76vw);
+    max-height:52vh;
+  }
+  .payment-qr-info div{
+    align-items:flex-start;
+  }
+  .recent-card{
+    flex:none;
+    height:auto;
+    min-height:0;
+    max-height:none;
+    display:block;
+    overflow:visible;
+  }
+  .recent-head{
+    flex-wrap:wrap;
+  }
+  .recent-more{
+    margin-left:auto;
+  }
+  .recent-body{
+    max-height:none;
+    overflow:visible;
+    padding-right:0;
+  }
 }
 #toast{
   top:auto!important;
@@ -2576,37 +2762,38 @@ nav.sidebar a.nav-link *{pointer-events:none}
 
   <div class="card payment-card mb20">
     <div class="sec" style="color:var(--acc)"><i data-lucide="credit-card"></i> Thông tin thanh toán</div>
-    <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
-      <div style="flex-shrink:0;text-align:center">
-        <div style="background:#fff;border-radius:11px;padding:9px;display:inline-block;box-shadow:0 4px 16px rgba(0,0,0,.4)">
-          <img src="https://img.vietqr.io/image/VCB-9933659414-compact2.png?accountName=NGUYEN%20NHAT%20KHANH" alt="QR" style="width:140px;height:140px;display:block;border-radius:5px" onerror="this.parentElement.innerHTML='<div style=width:140px;height:140px;display:flex;align-items:center;justify-content:center;font-size:32px>📷</div>'">
-        </div>
-        <div style="font-size:10px;color:var(--mut);margin-top:5px">Quét bằng app ngân hàng</div>
-      </div>
-      <div style="flex:1;min-width:220px">
-        <div class="payment-bank-box">
-          <div style="background:#005c2e;border-radius:4px;padding:2px 8px;font-size:10.5px;font-weight:800;color:#fff;display:inline-block;margin-bottom:9px;letter-spacing:.05em">VIETCOMBANK</div>
-          <div style="margin-bottom:7px">
-            <div style="font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;font-weight:600">Số tài khoản</div>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:700;color:var(--txt);display:flex;align-items:center;gap:8px;margin-top:3px;flex-wrap:wrap">
-              9933659414
-              <button onclick="copySTK()" class="btn-k" style="padding:3px 8px;font-size:10.5px"><i data-lucide="copy" style="width:10px;height:10px;display:inline-block;vertical-align:middle"></i> Copy</button>
-            </div>
-          </div>
-          <div>
-            <div style="font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;font-weight:600">Chủ tài khoản</div>
-            <div style="font-size:13px;font-weight:700;color:var(--txt);margin-top:3px">NGUYEN NHAT KHANH</div>
+    <div class="payment-card-body payment-compact">
+    <div class="payment-bank-box-compact">
+        <div class="payment-bank-badge">VIETCOMBANK</div>
+        <div class="payment-field">
+          <div class="payment-label">Số tài khoản</div>
+          <div class="payment-account-row">
+            <span class="payment-account-no">9933659414</span>
+            <button onclick="copySTK()" class="btn-k payment-copy-btn"><i data-lucide="copy"></i> Copy</button>
           </div>
         </div>
-        <div style="background:var(--red-d);border:1px solid rgba(239,68,68,.18);border-radius:9px;padding:10px 13px;font-size:11.5px;line-height:1.7">
-          <div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:5px"><i data-lucide="alert-triangle" style="width:13px;height:13px;color:var(--red);flex-shrink:0;margin-top:1px"></i><span style="color:var(--txt-2)">Nếu số dư <span style="color:var(--red);font-weight:700">âm</span>, vui lòng thanh toán và ghi nội dung ck: <span style="color:var(--yel);font-weight:600">tên của bạn</span></span></div>
-          <div style="display:flex;align-items:flex-start;gap:6px"><i data-lucide="pin" style="width:13px;height:13px;color:var(--acc);flex-shrink:0;margin-top:1px"></i><span style="color:var(--acc)">Lãi 10% sẽ áp dụng vào nợ tháng cũ khi qua tháng mới (vào quỹ team)</span></div>
+        <div class="payment-field">
+          <div class="payment-label">Chủ tài khoản</div>
+          <div class="payment-owner">NGUYEN NHAT KHANH</div>
         </div>
-      </div>
+        <button type="button" class="btn bb btn-sm payment-qr-btn" onclick="openPaymentQrModal()"><i data-lucide="qr-code"></i> QR thanh toán</button>
+    </div>
+    <div class="payment-warning-box" style="background:var(--red-d);border:1px solid rgba(239,68,68,.18);border-radius:9px;padding:10px 13px;font-size:11.5px;line-height:1.7">
+      <div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:5px"><i data-lucide="alert-triangle" style="width:13px;height:13px;color:var(--red);flex-shrink:0;margin-top:1px"></i><span style="color:var(--txt-2)">Nếu số dư <span style="color:var(--red);font-weight:700">âm</span>, vui lòng thanh toán và ghi nội dung ck: <span style="color:var(--yel);font-weight:600">tên của bạn</span></span></div>
+      <div style="display:flex;align-items:flex-start;gap:6px"><i data-lucide="pin" style="width:13px;height:13px;color:var(--acc);flex-shrink:0;margin-top:1px"></i><span style="color:var(--acc)">Lãi 10% sẽ áp dụng vào nợ tháng cũ khi qua tháng mới (vào quỹ team)</span></div>
+    </div>
     </div>
   </div>
 
-  <div class="card"><div class="sec"><i data-lucide="clock"></i> Giao dịch gần đây</div><div id="recent"></div></div>
+  <div class="card recent-card">
+    <div class="sec recent-head">
+      <span><i data-lucide="clock"></i> Giao dịch gần đây</span>
+      <button type="button" class="btn bg btn-sm recent-more" onclick="go('history')">
+        Xem thêm <i data-lucide="arrow-right"></i>
+      </button>
+    </div>
+    <div id="recent" class="recent-body"></div>
+  </div>
     </div>
   </div>
 </div>
@@ -3112,6 +3299,26 @@ nav.sidebar a.nav-link *{pointer-events:none}
     <div class="fl g8">
       <button class="btn bd" id="confirm-ok" onclick="resolveConfirm(true)" style="flex:1"><i data-lucide="trash-2"></i> Xác nhận</button>
       <button class="btn bg" onclick="resolveConfirm(false)">Hủy</button>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="ov-payment-qr">
+  <div class="modal payment-qr-modal">
+    <div class="sheet-handle"></div>
+    <button class="modal-close" onclick="closeOv('ov-payment-qr')"><i data-lucide="x"></i></button>
+    <div class="mt"><i data-lucide="qr-code"></i>QR thanh toán</div>
+    <div class="payment-qr-large-box">
+      <img src="https://img.vietqr.io/image/VCB-9933659414-compact2.png?accountName=NGUYEN%20NHAT%20KHANH" alt="QR thanh toán">
+    </div>
+    <div class="payment-qr-info">
+      <div><span>Ngân hàng</span><b>Vietcombank</b></div>
+      <div><span>Số tài khoản</span><b>9933659414</b></div>
+      <div><span>Chủ tài khoản</span><b>NGUYEN NHAT KHANH</b></div>
+    </div>
+    <div class="fl g8">
+      <button class="btn bb" style="flex:1" onclick="copySTK()"><i data-lucide="copy"></i> Copy số tài khoản</button>
+      <button class="btn bg" onclick="closeOv('ov-payment-qr')">Đóng</button>
     </div>
   </div>
 </div>
@@ -4905,6 +5112,30 @@ function toggleGiftFeedExpanded(){
   renderBirthdayGiftFeed();
 }
 
+function getRecentLimit(){
+  if(window.matchMedia('(max-width: 768px)').matches) return 5;
+
+  const card=document.querySelector('.recent-card');
+  const body=document.querySelector('.recent-body');
+  if(card&&body){
+    const cardRect=card.getBoundingClientRect();
+    const bodyRect=body.getBoundingClientRect();
+    const available=cardRect.bottom-bodyRect.top-2;
+    if(available>0){
+      const rows=[...document.querySelectorAll('#recent tbody tr')];
+      const rowHeights=rows.map(r=>r.getBoundingClientRect().height).filter(h=>h>0);
+      const avgRow=rowHeights.length?rowHeights.reduce((s,h)=>s+h,0)/rowHeights.length:44;
+      const rowH=Math.max(42,Math.min(56,avgRow));
+      const headH=document.querySelector('#recent thead')?.getBoundingClientRect().height||36;
+      return Math.max(5,Math.min(16,Math.floor((available-headH)/rowH)));
+    }
+  }
+
+  const h=window.innerHeight||900;
+  if(h<1120) return 5;
+  return 9;
+}
+
 function renderDash(){
   ensureFundMember();
   renderBirthdayBanner();
@@ -4958,7 +5189,7 @@ function renderDash(){
       }).join('')
     : '<tr><td colspan="3"><div class="empty"><i data-lucide="users"></i>Chưa có thành viên</div></td></tr>';
 
-  const rec=[...S.transactions].reverse().slice(0,5);
+  const rec=[...S.transactions].reverse().slice(0,getRecentLimit());
   document.getElementById('recent').innerHTML=rec.length
     ? `<table><thead><tr><th>Ngày</th><th>Mô tả</th><th>Số tiền</th><th>Loại</th></tr></thead><tbody>
         ${rec.map(t=>{
@@ -5779,6 +6010,10 @@ function openAddMember(){
   setTimeout(()=>document.getElementById('mem-name').focus(),250);
 }
 function closeOv(id){ document.getElementById(id).classList.remove('open'); }
+function openPaymentQrModal(){
+  document.getElementById('ov-payment-qr')?.classList.add('open');
+  refreshIcons();
+}
 function addMember(){
   if(!requireRole('admin')) return;
   const name=document.getElementById('mem-name').value.trim();
@@ -6614,7 +6849,15 @@ function initStartup(){
 document.addEventListener('firebase-ready',()=>{});
 
 setTimeout(()=>{moveRecTabInd();moveHistTabInd();},150);
-window.addEventListener('resize',()=>{moveRecTabInd();moveHistTabInd();});
+let resizeRenderTimer=null;
+window.addEventListener('resize',()=>{
+  clearTimeout(resizeRenderTimer);
+  resizeRenderTimer=setTimeout(()=>{
+    renderDash();
+    moveRecTabInd();
+    moveHistTabInd();
+  },120);
+});
 
 setTimeout(()=>{
   const sp=document.getElementById('splash');

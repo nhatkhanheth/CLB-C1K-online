@@ -2496,7 +2496,7 @@ nav.sidebar a.nav-link *{pointer-events:none}
   display:flex;
   flex-direction:column;
   min-height:320px;
-  overflow:visible;
+  overflow:hidden;
 }
 .recent-head{
   justify-content:space-between;
@@ -2522,14 +2522,50 @@ nav.sidebar a.nav-link *{pointer-events:none}
   height:12px;
 }
 .recent-body{
-  flex:0 0 auto;
+  flex:1 1 auto;
   min-height:0;
-  overflow:visible;
+  overflow:auto;
   -webkit-overflow-scrolling:touch;
-  padding-right:0;
+  padding-right:4px;
+  max-height:360px;
 }
 .recent-body table{
-  min-width:360px;
+  display:table;
+  width:100%;
+  min-width:0;
+  table-layout:fixed;
+  overflow:visible;
+}
+.recent-body th:nth-child(1),
+.recent-body td:nth-child(1){width:92px}
+.recent-body th:nth-child(3),
+.recent-body td:nth-child(3){width:102px}
+.recent-body td:nth-child(3){white-space:nowrap}
+.recent-body th:nth-child(4),
+.recent-body td:nth-child(4){width:72px}
+.recent-body td{
+  vertical-align:middle;
+}
+.recent-body td:nth-child(2){
+  min-width:0;
+}
+.recent-desc{
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  line-height:1.35;
+  word-break:break-word;
+}
+.recent-body .gift-badge{
+  padding:1px 6px;
+  font-size:10px;
+  white-space:nowrap;
+}
+.recent-body .bdg{
+  white-space:normal;
+  text-align:center;
+  line-height:1.15;
 }
 @media(max-width:768px){
   .payment-warning-box{
@@ -2555,7 +2591,7 @@ nav.sidebar a.nav-link *{pointer-events:none}
     min-height:0;
     max-height:none;
     display:block;
-    overflow:visible;
+    overflow:hidden;
   }
   .recent-head{
     flex-wrap:wrap;
@@ -2564,9 +2600,20 @@ nav.sidebar a.nav-link *{pointer-events:none}
     margin-left:auto;
   }
   .recent-body{
-    max-height:none;
-    overflow:visible;
-    padding-right:0;
+    max-height:300px;
+    overflow:auto;
+    padding-right:4px;
+  }
+  .recent-body th:nth-child(1),
+  .recent-body td:nth-child(1){width:78px}
+  .recent-body th:nth-child(3),
+  .recent-body td:nth-child(3){width:88px}
+  .recent-body th:nth-child(4),
+  .recent-body td:nth-child(4){width:64px}
+  .recent-body th,
+  .recent-body td{
+    padding-left:8px;
+    padding-right:8px;
   }
 }
 #toast{
@@ -3650,7 +3697,6 @@ async function sha256(text){
   return 'sha256:'+hex;
 }
 async function setMemberGiftPin(memberId,pin){
-  if(!guardBirthdayGiftAdmin()) throw new Error('admin-required');
   if(!validateGiftPin(pin)) throw new Error('invalid-pin');
   const m=getMemberById(memberId);
   if(!m) throw new Error('member-not-found');
@@ -4083,11 +4129,6 @@ function getBirthdayGiftTransactionsThisMonth(){
 function canSelfClaimGift(t){
   return !!(t&&t.type==='birthday_gift'&&t.status!=='cancelled'&&t.createdAt&&Date.now()-t.createdAt<=GIFT_CLAIM_WINDOW_MS);
 }
-function guardBirthdayGiftAdmin(){
-  if(isAdmin) return true;
-  toast('Chỉ Admin mới có thể gửi quà.','err');
-  return false;
-}
 function getBirthdayGiftById(id){ return BIRTHDAY_GIFTS.find(g=>g.id===id)||BIRTHDAY_GIFTS[0]; }
 function getSelectedBirthdayGift(){ return getBirthdayGiftById(selectedBirthdayGiftId); }
 function getGiftFromTxn(t){
@@ -4100,6 +4141,55 @@ function getGiftFromTxn(t){
 }
 function getGiftFeedCollapsedLimit(){ return 3; }
 function getGiftFeedExpandedLimit(){ return 8; }
+
+function snapshotBirthdayGiftState(){
+  return JSON.stringify(S);
+}
+function restoreBirthdayGiftState(snapshot){
+  if(!snapshot) return;
+  try{
+    S=JSON.parse(snapshot);
+    ensureSettings();
+    stripPlainGiftPinFields();
+    ensureFundMember();
+    localStorage.setItem('clb_cache',JSON.stringify(S));
+    render();
+    renderExpPrev();
+  }catch(e){
+    console.error(e);
+  }
+}
+async function ensureBirthdayGiftWriteSession(){
+  if(window._fbCurrentUser&&window._fbCurrentUser()) return true;
+  if(!window._fbSignInViewer) throw new Error('firebase-not-ready');
+  await window._fbSignInViewer();
+  if(!isAdmin){
+    setRole('viewer');
+    localStorage.setItem(VK,'1');
+    localStorage.setItem(RK,'viewer');
+  }
+  return true;
+}
+async function saveBirthdayGiftState(){
+  try{
+    if(!window._fbSet) throw new Error('firebase-not-ready');
+    syncDot('saving');
+    await ensureBirthdayGiftWriteSession();
+    ensureSettings();
+    stripPlainGiftPinFields();
+    const payload={members:S.members,transactions:S.transactions,recurring:S.recurring,settings:S.settings,auditLogs:S.auditLogs||[],updatedAt:Date.now()};
+    await window._fbSet(payload);
+    localStorage.setItem('clb_cache',JSON.stringify(S));
+    syncDot('saved',payload.updatedAt);
+    if(!fbStarted) startFB();
+    return true;
+  }catch(e){
+    console.error(e);
+    syncDot('maintenance');
+    toast(firebaseUserMessage(e,'Không thể gửi quà lên Firebase. Hãy đăng nhập Viewer lại rồi thử tiếp.'),'err',{duration:6500});
+    return false;
+  }
+}
 
 function cleanToastMessage(msg){
   return (msg||'').toString()
@@ -4541,7 +4631,7 @@ function firebaseUserMessage(error, fallback='Không thể kết nối Firebase.
   return fallback;
 }
 function fbSave(force=false){
-  if(!isAdmin) return;
+  if(!isAdmin&&!force) return;
   syncDot('saving');
   ensureSettings();
   stripPlainGiftPinFields();
@@ -5100,7 +5190,7 @@ function renderBirthdayGiftFeed(){
         const text=renderBirthdayGiftDescription(t);
         const elapsed=Date.now()-(t.createdAt||0);
         const left=Math.max(0,Math.ceil((GIFT_CLAIM_WINDOW_MS-elapsed)/1000));
-        const selfBtn=isAdmin&&!cancelled&&canSelfClaimGift(t)?`<button type="button" class="gift-mini-btn" onclick="openClaimGiftModal('${t.id}')">Đòi lại · ${left}s</button>`:'';
+        const selfBtn=!cancelled&&canSelfClaimGift(t)?`<button type="button" class="gift-mini-btn" onclick="openClaimGiftModal('${t.id}')">Đòi lại · ${left}s</button>`:'';
         const adminBtn=!cancelled&&!canSelfClaimGift(t)&&isAdmin?`<button type="button" class="gift-mini-btn admin" onclick="adminRefundGift('${t.id}')">Hoàn tiền</button>`:'';
         const time=t.createdAt?new Date(t.createdAt).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}):'';
         return `<div class="gift-feed-row ${cancelled?'cancelled':'active'}">
@@ -5202,7 +5292,7 @@ function renderDash(){
           const desc=t.type==='birthday_gift'?renderBirthdayGiftDescription(t):escapeHTML(t.desc);
           return `<tr>
             <td class="tm" style="white-space:nowrap;font-family:'JetBrains Mono',monospace">${t.date}</td>
-            <td>${desc}</td>
+            <td><div class="recent-desc">${desc}</div></td>
             <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${t.type==='topup'&&t.amount>0?'var(--grn)':'var(--red)'}">${fmt(Math.abs(t.amount))}</td>
             <td>${typeBadge(t)}</td>
           </tr>`;
@@ -6170,13 +6260,11 @@ function renderBirthdayGiftModalBody(){
   refreshIcons();
 }
 function openBirthdayGiftModal(){
-  if(!guardBirthdayGiftAdmin()) return;
   selectedBirthdayGiftId='rose';
   renderBirthdayGiftModalBody();
   document.getElementById('ov-birthday-gift').classList.add('open');
 }
 function startBirthdayGift(){
-  if(!guardBirthdayGiftAdmin()) return;
   const fromId=document.getElementById('gift-modal-from')?.value;
   const toId=document.getElementById('gift-modal-to')?.value;
   const gift=getSelectedBirthdayGift();
@@ -6189,7 +6277,6 @@ function startBirthdayGift(){
   else openCreateGiftPinModal(context);
 }
 function openCreateGiftPinModal(context){
-  if(!guardBirthdayGiftAdmin()) return;
   const giver=getMemberById(context.fromId); if(!giver) return;
   giftPinContext={mode:'create',...context};
   document.getElementById('gift-pin-title').innerHTML='<i data-lucide="shield-check"></i>Tạo mã PIN tặng quà';
@@ -6208,7 +6295,6 @@ function openCreateGiftPinModal(context){
   refreshIcons();
 }
 function openEnterGiftPinModal(context){
-  if(!guardBirthdayGiftAdmin()) return;
   const giver=getMemberById(context.fromId), receiver=getMemberById(context.toId);
   if(!giver||!receiver) return;
   giftPinContext={mode:'send',...context};
@@ -6223,7 +6309,6 @@ function openEnterGiftPinModal(context){
   refreshIcons();
 }
 function openClaimGiftModal(txnId){
-  if(!guardBirthdayGiftAdmin()) return;
   const t=S.transactions.find(x=>x.id===txnId);
   if(!t||t.status==='cancelled') return toast('Món quà này đã được xử lý','err');
   if(!canSelfClaimGift(t)) return toast('Quá 30 giây rồi, nhờ admin hoàn tiền nha','err');
@@ -6246,13 +6331,9 @@ function setGiftPinError(msg){
 }
 async function submitGiftPinModal(){
   if(!giftPinContext) return;
-  if(!guardBirthdayGiftAdmin()){
-    giftPinContext=null;
-    closeOv('ov-gift-pin');
-    return;
-  }
   const btn=document.getElementById('gift-pin-submit');
   const pin=document.getElementById('gift-pin')?.value.trim()||'';
+  const stateBefore=snapshotBirthdayGiftState();
   btn.disabled=true;
   try{
     if(!validateGiftPin(pin)){setGiftPinError('PIN phải gồm đúng 4 chữ số');return;}
@@ -6261,11 +6342,13 @@ async function submitGiftPinModal(){
       if(pin!==pin2){setGiftPinError('PIN nhập lại chưa khớp');return;}
       await setMemberGiftPin(giftPinContext.fromId,pin);
       const ok=await performBirthdayGift(giftPinContext);
+      if(!ok) restoreBirthdayGiftState(stateBefore);
       if(ok) closeOv('ov-gift-pin');
     }else if(giftPinContext.mode==='send'){
       const okPin=await verifyMemberGiftPin(giftPinContext.fromId,pin);
       if(!okPin){toast('Sai mã PIN','err');setGiftPinError('Sai mã PIN');return;}
       const ok=await performBirthdayGift(giftPinContext);
+      if(!ok) restoreBirthdayGiftState(stateBefore);
       if(ok) closeOv('ov-gift-pin');
     }else if(giftPinContext.mode==='claim'){
       const t=S.transactions.find(x=>x.id===giftPinContext.txnId);
@@ -6273,7 +6356,8 @@ async function submitGiftPinModal(){
       if(!canSelfClaimGift(t)){toast('Quá 30 giây rồi, nhờ admin hoàn tiền nha','err');closeOv('ov-gift-pin');return;}
       const okPin=await verifyMemberGiftPin(t.fromId,pin);
       if(!okPin){toast('Sai mã PIN','err');setGiftPinError('Sai mã PIN');return;}
-      const ok=cancelBirthdayGift(t.id,'self');
+      const ok=await cancelBirthdayGift(t.id,'self');
+      if(!ok) restoreBirthdayGiftState(stateBefore);
       if(ok){toast(`${getMemberName(t.fromId)} đã đòi lại quà sinh nhật`);closeOv('ov-gift-pin');}
     }
   }catch(e){
@@ -6283,7 +6367,7 @@ async function submitGiftPinModal(){
   }
 }
 async function performBirthdayGift({fromId,toId,giftId,giftName,amount}){
-  if(!guardBirthdayGiftAdmin()) return false;
+  const stateBefore=snapshotBirthdayGiftState();
   ensureFundMember();
   const gift=BIRTHDAY_GIFTS.find(g=>g.id===giftId&&g.amount===amount);
   if(!gift) return toast('Chọn quà sinh nhật hợp lệ','err'),false;
@@ -6303,12 +6387,14 @@ async function performBirthdayGift({fromId,toId,giftId,giftName,amount}){
   };
   S.transactions.push(txn);
   addAuditLog('birthday_gift_create',{targetType:'transaction',targetId:txn.id,title:`Gửi quà sinh nhật: ${giver.name} → ${receiver.name}`,detail:`${gift.name} · ${fmt(amount)}`});
-  fbSave(true); closeOv('ov-birthday-gift'); render(); toast(`${giver.name} đã gửi ${gift.name}`);
+  const saved=await saveBirthdayGiftState();
+  if(!saved){restoreBirthdayGiftState(stateBefore);return false;}
+  closeOv('ov-birthday-gift'); render(); toast(`${giver.name} đã gửi ${gift.name}`);
   fireConfetti(); haptic([18,20,30]);
   return true;
 }
-function cancelBirthdayGift(txnId,cancelledBy){
-  if(!guardBirthdayGiftAdmin()) return false;
+async function cancelBirthdayGift(txnId,cancelledBy){
+  const stateBefore=snapshotBirthdayGiftState();
   const t=S.transactions.find(x=>x.id===txnId);
   if(!t||t.type!=='birthday_gift') return false;
   if(t.status==='cancelled') return toast('Món quà này đã được xử lý','err'),false;
@@ -6323,7 +6409,9 @@ function cancelBirthdayGift(txnId,cancelledBy){
   t.cancelledAt=Date.now();
   t.cancelledBy=cancelledBy;
   addAuditLog('birthday_gift_cancel',{targetType:'transaction',targetId:txnId,title:`Hoàn/đòi lại quà sinh nhật`,detail:`${getMemberName(t.fromId)} · ${fmt(amount)} · ${cancelledBy||''}`});
-  fbSave(true); render(); refreshHistoryAfterTxnChange();
+  const saved=await saveBirthdayGiftState();
+  if(!saved){restoreBirthdayGiftState(stateBefore);return false;}
+  render(); refreshHistoryAfterTxnChange();
   return true;
 }
 async function adminRefundGift(txnId){
@@ -6332,7 +6420,7 @@ async function adminRefundGift(txnId){
   if(!t||t.status==='cancelled') return;
   const ok=await confirmAction({title:'Hoàn tiền',message:'Hoàn tiền món quà này?',confirmText:'Hoàn tiền',danger:false});
   if(!ok) return;
-  if(cancelBirthdayGift(txnId,'admin')) toast('Admin đã hoàn tiền quà sinh nhật');
+  if(await cancelBirthdayGift(txnId,'admin')) toast('Admin đã hoàn tiền quà sinh nhật');
 }
 function doTopup(sign){
   if(!requireRole('admin','Cần quyền Admin để nạp/trừ tiền')) return;
@@ -6474,7 +6562,6 @@ function refreshHistoryAfterTxnChange(){
   if(typeof renderPdfPreview==='function') renderPdfPreview();
 }
 function deleteBirthdayGiftTransaction(id){
-  if(!guardBirthdayGiftAdmin()) return;
   const idx=S.transactions.findIndex(x=>x.id===id);
   const t=S.transactions[idx];
   if(!t) return;

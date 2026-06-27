@@ -186,6 +186,32 @@ body{
 .pin-note{font-size:11.5px;color:var(--mut);line-height:1.55;margin:8px 0 10px}
 .pin-status{font-size:12px;color:var(--txt-3);line-height:1.55;margin-bottom:10px}
 .pin-settings-actions{display:flex;gap:8px;flex-wrap:wrap}
+.gift-settings-list{display:grid;gap:10px}
+.gift-setting-row{
+  display:grid;
+  grid-template-columns:34px minmax(0,1.4fr) minmax(96px,.9fr);
+  gap:8px;
+  align-items:end;
+  padding:10px;
+  border:1px solid var(--bord);
+  border-radius:12px;
+  background:rgba(255,255,255,.035);
+}
+.gift-setting-icon{
+  width:34px;
+  height:34px;
+  border-radius:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(255,255,255,.07);
+  border:1px solid var(--bord-2);
+}
+.gift-setting-row input{min-width:0}
+@media(max-width:520px){
+  .gift-setting-row{grid-template-columns:30px 1fr;align-items:end}
+  .gift-setting-row .gift-setting-amount{grid-column:2}
+}
 .pin-input{text-align:center;font-family:'JetBrains Mono',monospace;font-size:18px;letter-spacing:.18em;font-weight:800}
 .pin-input::placeholder{letter-spacing:0;font-family:'Inter',sans-serif;font-size:13px;font-weight:500}
 .pin-unlock{text-align:center}
@@ -3273,6 +3299,12 @@ nav.sidebar a.nav-link *{pointer-events:none}
       <button class="btn bg" onclick="saveAppName()"><i data-lucide="save"></i> Lưu tên app</button>
     </div>
     <div class="card mb12 admin-tool-block" style="box-shadow:none">
+      <div class="sec"><i data-lucide="gift"></i> Quà sinh nhật</div>
+      <p class="tm mb12">Chỉnh tên và giá trị quà. Lịch sử cũ vẫn giữ đúng tên/giá tại thời điểm đã gửi.</p>
+      <div class="gift-settings-list" id="settings-gift-list"></div>
+      <button class="btn bg mt12" onclick="saveBirthdayGiftSettings()"><i data-lucide="save"></i> Lưu quà sinh nhật</button>
+    </div>
+    <div class="card mb12 admin-tool-block" style="box-shadow:none">
       <div class="sec"><i data-lucide="shield-check"></i> Tùy chọn bảo mật</div>
       <p class="pin-status" id="pin-settings-status">PIN nhanh chưa được bật.</p>
       <div class="pin-settings-actions" id="pin-settings-actions"></div>
@@ -3448,11 +3480,12 @@ const PAY_BANK_CODE = 'VCB';
 const PAY_ACCOUNT_NO = '9933659414';
 const PAY_ACCOUNT_NAME = 'NGUYEN NHAT KHANH';
 const GIFT_CLAIM_WINDOW_MS = 30 * 1000;
-const BIRTHDAY_GIFTS = [
+const DEFAULT_BIRTHDAY_GIFTS = [
   { id:'rose', name:'Hoa hồng', amount:1000, icon:'🌹' },
   { id:'lion', name:'Sư tử', amount:10000, icon:'🦁' },
   { id:'whale', name:'Cá voi', amount:50000, icon:'🐋' }
 ];
+let BIRTHDAY_GIFTS = DEFAULT_BIRTHDAY_GIFTS.map(g=>({...g}));
 let selectedBirthdayGiftId = 'rose';
 let giftPinContext = null;
 let birthdayGiftFeedExpanded = false;
@@ -3499,6 +3532,8 @@ function hideAppLoading(){
 function ensureSettings(){
   if(!S.settings) S.settings={};
   if(!S.settings.appName) S.settings.appName=DEFAULT_APP_NAME;
+  S.settings.birthdayGifts=normalizeBirthdayGifts(S.settings.birthdayGifts);
+  BIRTHDAY_GIFTS=S.settings.birthdayGifts.map(g=>({...g}));
   if(!Array.isArray(S.auditLogs)) S.auditLogs=[];
   S.members=(S.members||[]).map(m=>({
     ...m,
@@ -3506,6 +3541,19 @@ function ensureSettings(){
     archivedAt:m.archivedAt||null,
     note:typeof m.note==='string'?m.note:(m.note||'')
   }));
+}
+function normalizeBirthdayGifts(list){
+  const arr=Array.isArray(list)?list:[];
+  return DEFAULT_BIRTHDAY_GIFTS.map(def=>{
+    const found=arr.find(x=>x&&x.id===def.id)||{};
+    const name=(found.name||def.name||'Quà sinh nhật').toString().trim().slice(0,28)||def.name;
+    const amount=Math.max(1,Math.round(Number(found.amount||def.amount||0)));
+    return {id:def.id,name,amount,icon:def.icon};
+  });
+}
+function getBirthdayGifts(){
+  ensureSettings();
+  return BIRTHDAY_GIFTS;
 }
 function makeAuditLog(action,{targetType='',targetId='',title='',detail=''}={}){
   return {
@@ -4129,10 +4177,10 @@ function getBirthdayGiftTransactionsThisMonth(){
 function canSelfClaimGift(t){
   return !!(t&&t.type==='birthday_gift'&&t.status!=='cancelled'&&t.createdAt&&Date.now()-t.createdAt<=GIFT_CLAIM_WINDOW_MS);
 }
-function getBirthdayGiftById(id){ return BIRTHDAY_GIFTS.find(g=>g.id===id)||BIRTHDAY_GIFTS[0]; }
+function getBirthdayGiftById(id){ const gifts=getBirthdayGifts(); return gifts.find(g=>g.id===id)||gifts[0]; }
 function getSelectedBirthdayGift(){ return getBirthdayGiftById(selectedBirthdayGiftId); }
 function getGiftFromTxn(t){
-  const gift=t&&t.giftId?BIRTHDAY_GIFTS.find(g=>g.id===t.giftId):null;
+  const gift=t&&t.giftId?getBirthdayGifts().find(g=>g.id===t.giftId):null;
   return {
     id:(t&&t.giftId)||gift?.id||'legacy',
     name:(t&&t.giftName)||gift?.name||'quà sinh nhật',
@@ -4186,7 +4234,11 @@ async function saveBirthdayGiftState(){
   }catch(e){
     console.error(e);
     syncDot('maintenance');
-    toast(firebaseUserMessage(e,'Không thể gửi quà lên Firebase. Hãy đăng nhập Viewer lại rồi thử tiếp.'),'err',{duration:6500});
+    const msg=((e&&e.code)||'')+' '+((e&&e.message)||'');
+    const giftMsg=msg.toLowerCase().includes('permission')
+      ? 'Firebase Rules chưa cho Viewer ghi quà sinh nhật. Hãy publish firebase.rules.json mới rồi thử lại.'
+      : firebaseUserMessage(e,'Không thể gửi quà lên Firebase. Hãy đăng nhập Viewer lại rồi thử tiếp.');
+    toast(giftMsg,'err',{duration:6500});
     return false;
   }
 }
@@ -4237,6 +4289,7 @@ function openSettingsModal(){
   const nameInput=document.getElementById('settings-app-name');
   if(nameInput) nameInput.value=getAppName();
   document.getElementById('sound-toggle')?.classList.toggle('on',soundOn);
+  renderBirthdayGiftSettings();
   renderQuickPinSettings();
   document.getElementById('ov-settings')?.classList.add('open');
   refreshIcons();
@@ -4253,6 +4306,49 @@ function saveAppName(){
   fbSave();
   renderAppName();
   toast('Đã đổi tên app');
+}
+function renderBirthdayGiftSettings(){
+  const el=document.getElementById('settings-gift-list');
+  if(!el) return;
+  el.innerHTML=getBirthdayGifts().map(g=>`
+    <div class="gift-setting-row" data-gift-id="${escapeHTML(g.id)}">
+      <div class="gift-setting-icon">${escapeHTML(g.icon||'')}</div>
+      <div>
+        <label>Tên quà</label>
+        <input type="text" class="gift-setting-name" maxlength="28" value="${escapeHTML(g.name)}" placeholder="Tên quà">
+      </div>
+      <div class="gift-setting-amount">
+        <label>Số tiền (VND)</label>
+        <input type="number" class="gift-setting-value" min="1" step="100" value="${Number(g.amount)||0}" placeholder="1000">
+      </div>
+    </div>`).join('');
+}
+function saveBirthdayGiftSettings(){
+  if(!requireRole('admin','Cần quyền Admin để chỉnh quà sinh nhật')) return;
+  ensureSettings();
+  const rows=[...document.querySelectorAll('#settings-gift-list .gift-setting-row')];
+  if(!rows.length) return toast('Không tìm thấy danh sách quà','err');
+  try{
+    const next=DEFAULT_BIRTHDAY_GIFTS.map(def=>{
+      const row=rows.find(r=>r.dataset.giftId===def.id);
+      const name=(row?.querySelector('.gift-setting-name')?.value||'').trim();
+      const amount=Math.round(Number(row?.querySelector('.gift-setting-value')?.value||0));
+      if(!name) throw new Error('gift-name-empty');
+      if(name.length>28) throw new Error('gift-name-long');
+      if(!amount||amount<=0) throw new Error('gift-amount-invalid');
+      return {id:def.id,name,amount,icon:def.icon};
+    });
+    S.settings.birthdayGifts=normalizeBirthdayGifts(next);
+    BIRTHDAY_GIFTS=S.settings.birthdayGifts.map(g=>({...g}));
+    addAuditLog('settings_birthday_gifts',{targetType:'settings',title:'Cập nhật quà sinh nhật',detail:BIRTHDAY_GIFTS.map(g=>`${g.name}: ${fmt(g.amount)}`).join('; ')});
+    fbSave();
+    renderBirthdayGiftSettings();
+    renderBirthdayGiftModalBody();
+    renderDash();
+    toast('Đã lưu quà sinh nhật');
+  }catch(e){
+    toast('Tên quà không được trống và số tiền phải lớn hơn 0','err');
+  }
 }
 
 function haptic(ms=8){ if(navigator.vibrate) navigator.vibrate(ms); }
@@ -6244,7 +6340,7 @@ function renderBirthdayGiftModalBody(){
       <div>
         <label>Chọn quà</label>
         <div class="gift-choice-grid">
-          ${BIRTHDAY_GIFTS.map(g=>`
+          ${getBirthdayGifts().map(g=>`
             <button type="button" class="gift-choice-card ${g.id===selectedBirthdayGiftId?'on':''}" onclick="selectBirthdayGift('${g.id}')">
               <div class="gift-choice-name"><span class="gift-choice-icon">${escapeHTML(g.icon)}</span><span>${escapeHTML(g.name)}</span></div>
               <div class="gift-choice-price">${fmt(g.amount)}</div>
@@ -6369,7 +6465,7 @@ async function submitGiftPinModal(){
 async function performBirthdayGift({fromId,toId,giftId,giftName,amount}){
   const stateBefore=snapshotBirthdayGiftState();
   ensureFundMember();
-  const gift=BIRTHDAY_GIFTS.find(g=>g.id===giftId&&g.amount===amount);
+  const gift=getBirthdayGifts().find(g=>g.id===giftId&&g.amount===amount);
   if(!gift) return toast('Chọn quà sinh nhật hợp lệ','err'),false;
   const giver=getMemberById(fromId), receiver=getMemberById(toId), fund=getBirthdayFund();
   if(!giver||!receiver||!fund){toast('Không tìm thấy người tặng hoặc Birthday Vault','err');return false;}

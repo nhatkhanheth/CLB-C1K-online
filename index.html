@@ -1852,6 +1852,52 @@ nav.sidebar a.nav-link *{pointer-events:none}
   gap:10px;
 }
 .gift-select-grid label{color:#ffe8ad}
+.gift-member-options{
+  display:grid;
+  gap:7px;
+  max-height:154px;
+  overflow:auto;
+  padding:2px;
+  -webkit-overflow-scrolling:touch;
+}
+.gift-recipient-options{max-height:104px}
+.gift-member-option{
+  width:100%;
+  min-height:42px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(0,0,0,.22);
+  color:#f9fafb;
+  border-radius:13px;
+  padding:9px 11px;
+  font:inherit;
+  text-align:left;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  cursor:pointer;
+  touch-action:manipulation;
+  transition:all .18s var(--ease);
+}
+.gift-member-option.on{
+  background:linear-gradient(135deg,rgba(255,159,28,.24),rgba(236,72,153,.18),rgba(168,85,247,.16));
+  border-color:rgba(255,232,173,.42);
+  box-shadow:0 10px 22px rgba(236,72,153,.12), inset 0 0 0 1px rgba(255,255,255,.06);
+}
+.gift-member-name{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-weight:900;
+}
+.gift-member-sub{
+  flex:0 0 auto;
+  color:#ffe8ad;
+  font-size:11px;
+  font-weight:900;
+  opacity:.9;
+}
 .gift-submit{
   min-height:40px;
   background:linear-gradient(135deg,rgba(255,159,28,.88),rgba(236,72,153,.76),rgba(168,85,247,.70))!important;
@@ -2287,6 +2333,9 @@ nav.sidebar a.nav-link *{pointer-events:none}
   .gift-cta-btn{min-height:32px;padding:7px 10px!important}
   .gift-controls{grid-template-columns:1fr;align-items:stretch}
   .gift-select-grid{grid-template-columns:1fr}
+  .gift-member-options{max-height:138px}
+  .gift-recipient-options{max-height:88px}
+  .gift-member-option{min-height:39px;padding:8px 10px}
   .gift-choice-grid{grid-template-columns:1fr 1fr 1fr;gap:7px}
   .gift-choice-card{min-height:66px;padding:9px 8px}
   .gift-choice-name{font-size:11.5px}
@@ -3515,6 +3564,7 @@ function applyK(id,cb){ const el=document.getElementById(id); if(!el) return; el
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function td(){ return new Date().toISOString().split('T')[0]; }
 function escapeHTML(s){return (s||'').toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function jsArg(s){return JSON.stringify(String(s||'')).replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026').replace(/'/g,'\\u0027');}
 function refreshIcons(){ if(window.lucide && lucide.createIcons) lucide.createIcons(); }
 function showAppLoading(title='Đang đồng bộ',sub='Đang xác thực và tải dữ liệu mới nhất...',maintenance=false){
   const el=document.getElementById('app-loading');
@@ -6321,6 +6371,15 @@ function captureBirthdayGiftSelectState(){
 }
 function setBirthdayGiftRecipient(id){ selectedGiftRecipientId=id||''; }
 function setBirthdayGiftGiver(id){ selectedGiftGiverId=id||''; }
+function selectBirthdayGiftRecipient(id){
+  selectedGiftRecipientId=id||'';
+  renderBirthdayGiftModalBody();
+}
+function selectBirthdayGiftGiver(id){
+  selectedGiftGiverId=id||'';
+  try{ localStorage.setItem('clb_last_gift_giver',selectedGiftGiverId); }catch(e){}
+  renderBirthdayGiftModalBody();
+}
 function syncBirthdayGiftSelectionState(recipients,givers){
   const todayRecipient=recipients.find(m=>isBirthdayToday(m.birthday));
   if(!selectedGiftRecipientId||!recipients.some(m=>m.id===selectedGiftRecipientId)){
@@ -6366,8 +6425,25 @@ function renderBirthdayGiftModalBody(){
         </div>
       </div>
       <div class="gift-select-grid">
-        <div><label>Người nhận sinh nhật</label><select id="gift-modal-to" onchange="setBirthdayGiftRecipient(this.value)">${recipients.map(m=>`<option value="${escapeHTML(m.id)}" ${m.id===toVal?'selected':''}>${escapeHTML(m.name)} — ${formatBirthdayShort(m.birthday)}</option>`).join('')}</select></div>
-        <div><label>Người tặng</label><select id="gift-modal-from" onchange="setBirthdayGiftGiver(this.value)">${givers.map(m=>`<option value="${escapeHTML(m.id)}" ${m.id===fromVal?'selected':''}>${escapeHTML(m.name)}</option>`).join('')}</select></div>
+        <div>
+          <label>Người nhận sinh nhật</label>
+          <div class="gift-member-options gift-recipient-options" id="gift-modal-to-options">
+            ${recipients.map(m=>`
+              <button type="button" class="gift-member-option ${m.id===toVal?'on':''}" onclick='selectBirthdayGiftRecipient(${jsArg(m.id)})'>
+                <span class="gift-member-name">${escapeHTML(m.name)}</span>
+                <span class="gift-member-sub">${formatBirthdayShort(m.birthday)}</span>
+              </button>`).join('')}
+          </div>
+        </div>
+        <div>
+          <label>Người tặng</label>
+          <div class="gift-member-options gift-giver-options" id="gift-modal-from-options">
+            ${givers.map(m=>`
+              <button type="button" class="gift-member-option ${m.id===fromVal?'on':''}" onclick='selectBirthdayGiftGiver(${jsArg(m.id)})'>
+                <span class="gift-member-name">${escapeHTML(m.name)}</span>
+              </button>`).join('')}
+          </div>
+        </div>
       </div>
       <div class="gift-modal-actions"><button type="button" class="btn gift-submit" onclick="startBirthdayGift()"><i data-lucide="gift"></i> Gửi ${escapeHTML(selectedGift.name)}</button></div>
     </div>`;
@@ -6376,7 +6452,7 @@ function renderBirthdayGiftModalBody(){
 function openBirthdayGiftModal(){
   selectedBirthdayGiftId='rose';
   selectedGiftRecipientId='';
-  selectedGiftGiverId='';
+  try{ selectedGiftGiverId=localStorage.getItem('clb_last_gift_giver')||selectedGiftGiverId||''; }catch(e){}
   renderBirthdayGiftModalBody();
   document.getElementById('ov-birthday-gift').classList.add('open');
 }

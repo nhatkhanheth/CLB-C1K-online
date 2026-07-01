@@ -3487,6 +3487,8 @@ const DEFAULT_BIRTHDAY_GIFTS = [
 ];
 let BIRTHDAY_GIFTS = DEFAULT_BIRTHDAY_GIFTS.map(g=>({...g}));
 let selectedBirthdayGiftId = 'rose';
+let selectedGiftRecipientId = '';
+let selectedGiftGiverId = '';
 let giftPinContext = null;
 let birthdayGiftFeedExpanded = false;
 let appliedRecurringContext = null;
@@ -6311,7 +6313,25 @@ async function resetMemberGiftPinFromEdit(){
   addAuditLog('member_gift_pin_reset',{targetType:'member',targetId:id,title:`Reset PIN quà của ${m.name}`});
   fbSave(); render(); renderEditGiftPinStatus(getMemberById(id)); toast('Đã reset PIN');
 }
+function captureBirthdayGiftSelectState(){
+  const to=document.getElementById('gift-modal-to')?.value;
+  const from=document.getElementById('gift-modal-from')?.value;
+  if(to) selectedGiftRecipientId=to;
+  if(from) selectedGiftGiverId=from;
+}
+function setBirthdayGiftRecipient(id){ selectedGiftRecipientId=id||''; }
+function setBirthdayGiftGiver(id){ selectedGiftGiverId=id||''; }
+function syncBirthdayGiftSelectionState(recipients,givers){
+  const todayRecipient=recipients.find(m=>isBirthdayToday(m.birthday));
+  if(!selectedGiftRecipientId||!recipients.some(m=>m.id===selectedGiftRecipientId)){
+    selectedGiftRecipientId=todayRecipient?.id||recipients[0]?.id||'';
+  }
+  if(!selectedGiftGiverId||!givers.some(m=>m.id===selectedGiftGiverId)){
+    selectedGiftGiverId=givers[0]?.id||'';
+  }
+}
 function selectBirthdayGift(giftId){
+  captureBirthdayGiftSelectState();
   selectedBirthdayGiftId=giftId;
   renderBirthdayGiftModalBody();
 }
@@ -6328,11 +6348,9 @@ function renderBirthdayGiftModalBody(){
     el.innerHTML='<div class="gift-empty">Cần có thành viên thường để gửi quà sinh nhật.</div>';
     return;
   }
-  const oldTo=document.getElementById('gift-modal-to')?.value;
-  const oldFrom=document.getElementById('gift-modal-from')?.value;
-  const todayRecipient=recipients.find(m=>isBirthdayToday(m.birthday));
-  const toVal=oldTo&&recipients.some(m=>m.id===oldTo)?oldTo:(todayRecipient?.id||recipients[0].id);
-  const fromVal=oldFrom&&givers.some(m=>m.id===oldFrom)?oldFrom:givers[0].id;
+  syncBirthdayGiftSelectionState(recipients,givers);
+  const toVal=selectedGiftRecipientId;
+  const fromVal=selectedGiftGiverId;
   const selectedGift=getSelectedBirthdayGift();
   el.innerHTML=`
     <div class="gift-pin-modal-body">
@@ -6348,8 +6366,8 @@ function renderBirthdayGiftModalBody(){
         </div>
       </div>
       <div class="gift-select-grid">
-        <div><label>Người nhận sinh nhật</label><select id="gift-modal-to">${recipients.map(m=>`<option value="${escapeHTML(m.id)}" ${m.id===toVal?'selected':''}>${escapeHTML(m.name)} — ${formatBirthdayShort(m.birthday)}</option>`).join('')}</select></div>
-        <div><label>Người tặng</label><select id="gift-modal-from">${givers.map(m=>`<option value="${escapeHTML(m.id)}" ${m.id===fromVal?'selected':''}>${escapeHTML(m.name)}</option>`).join('')}</select></div>
+        <div><label>Người nhận sinh nhật</label><select id="gift-modal-to" onchange="setBirthdayGiftRecipient(this.value)">${recipients.map(m=>`<option value="${escapeHTML(m.id)}" ${m.id===toVal?'selected':''}>${escapeHTML(m.name)} — ${formatBirthdayShort(m.birthday)}</option>`).join('')}</select></div>
+        <div><label>Người tặng</label><select id="gift-modal-from" onchange="setBirthdayGiftGiver(this.value)">${givers.map(m=>`<option value="${escapeHTML(m.id)}" ${m.id===fromVal?'selected':''}>${escapeHTML(m.name)}</option>`).join('')}</select></div>
       </div>
       <div class="gift-modal-actions"><button type="button" class="btn gift-submit" onclick="startBirthdayGift()"><i data-lucide="gift"></i> Gửi ${escapeHTML(selectedGift.name)}</button></div>
     </div>`;
@@ -6357,12 +6375,15 @@ function renderBirthdayGiftModalBody(){
 }
 function openBirthdayGiftModal(){
   selectedBirthdayGiftId='rose';
+  selectedGiftRecipientId='';
+  selectedGiftGiverId='';
   renderBirthdayGiftModalBody();
   document.getElementById('ov-birthday-gift').classList.add('open');
 }
 function startBirthdayGift(){
-  const fromId=document.getElementById('gift-modal-from')?.value;
-  const toId=document.getElementById('gift-modal-to')?.value;
+  captureBirthdayGiftSelectState();
+  const fromId=selectedGiftGiverId||document.getElementById('gift-modal-from')?.value;
+  const toId=selectedGiftRecipientId||document.getElementById('gift-modal-to')?.value;
   const gift=getSelectedBirthdayGift();
   const amount=gift.amount;
   const giver=getMemberById(fromId);

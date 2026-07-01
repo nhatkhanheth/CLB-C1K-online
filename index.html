@@ -1898,6 +1898,82 @@ nav.sidebar a.nav-link *{pointer-events:none}
   font-weight:900;
   opacity:.9;
 }
+.gift-picker-trigger{
+  width:100%;
+  min-height:46px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(0,0,0,.22);
+  color:#fff;
+  border-radius:14px;
+  padding:10px 12px;
+  font:inherit;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+.gift-picker-trigger strong{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-weight:900;
+}
+.gift-picker-trigger span{
+  flex:0 0 auto;
+  color:#ffe8ad;
+  font-size:11px;
+  font-weight:900;
+}
+.gift-picker-trigger i{width:15px;height:15px;color:#ffe8ad;flex:0 0 auto}
+#ov-gift-member-picker{z-index:2150}
+.gift-picker-modal{width:420px}
+.gift-picker-note{
+  color:var(--mut);
+  font-size:12px;
+  line-height:1.45;
+  margin:-6px 0 12px;
+}
+.gift-picker-list{
+  display:grid;
+  gap:8px;
+  padding-bottom:2px;
+}
+.gift-picker-option{
+  min-height:44px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.045);
+  color:#f9fafb;
+  border-radius:14px;
+  padding:10px 12px;
+  font:inherit;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+.gift-picker-option.on{
+  background:linear-gradient(135deg,rgba(255,159,28,.25),rgba(236,72,153,.18));
+  border-color:rgba(255,232,173,.45);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);
+}
+.gift-picker-option-name{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-weight:900;
+}
+.gift-picker-option-meta{
+  flex:0 0 auto;
+  color:#ffe8ad;
+  font-size:11px;
+  font-weight:900;
+}
 .gift-submit{
   min-height:40px;
   background:linear-gradient(135deg,rgba(255,159,28,.88),rgba(236,72,153,.76),rgba(168,85,247,.70))!important;
@@ -2336,6 +2412,11 @@ nav.sidebar a.nav-link *{pointer-events:none}
   .gift-member-options{max-height:138px}
   .gift-recipient-options{max-height:88px}
   .gift-member-option{min-height:39px;padding:8px 10px}
+  .gift-picker-modal{
+    max-height:86vh;
+    padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));
+  }
+  .gift-picker-option{min-height:43px}
   .gift-choice-grid{grid-template-columns:1fr 1fr 1fr;gap:7px}
   .gift-choice-card{min-height:66px;padding:9px 8px}
   .gift-choice-name{font-size:11.5px}
@@ -3246,6 +3327,16 @@ nav.sidebar a.nav-link *{pointer-events:none}
   </div>
 </div>
 
+<div class="ov" id="ov-gift-member-picker">
+  <div class="modal gift-picker-modal">
+    <div class="sheet-handle"></div>
+    <button class="modal-close" onclick="closeOv('ov-gift-member-picker')"><i data-lucide="x"></i></button>
+    <div class="mt" id="gift-picker-title"><i data-lucide="users"></i>Chọn thành viên</div>
+    <div class="gift-picker-note" id="gift-picker-note"></div>
+    <div class="gift-picker-list" id="gift-picker-list"></div>
+  </div>
+</div>
+
 <div class="ov" id="ov-rec">
   <div class="modal">
     <div class="sheet-handle"></div>
@@ -3538,6 +3629,7 @@ let BIRTHDAY_GIFTS = DEFAULT_BIRTHDAY_GIFTS.map(g=>({...g}));
 let selectedBirthdayGiftId = 'rose';
 let selectedGiftRecipientId = '';
 let selectedGiftGiverId = '';
+let giftMemberPickerMode = 'giver';
 let giftPinContext = null;
 let birthdayGiftFeedExpanded = false;
 let appliedRecurringContext = null;
@@ -6380,6 +6472,41 @@ function selectBirthdayGiftGiver(id){
   try{ localStorage.setItem('clb_last_gift_giver',selectedGiftGiverId); }catch(e){}
   renderBirthdayGiftModalBody();
 }
+function openGiftMemberPicker(mode){
+  const recipients=getBirthdayMembersThisMonth();
+  const givers=getGiftableMembers();
+  if(!recipients.length||!givers.length) return;
+  syncBirthdayGiftSelectionState(recipients,givers);
+  giftMemberPickerMode=mode==='recipient'?'recipient':'giver';
+  renderGiftMemberPicker();
+  document.getElementById('ov-gift-member-picker')?.classList.add('open');
+}
+function renderGiftMemberPicker(){
+  const title=document.getElementById('gift-picker-title');
+  const note=document.getElementById('gift-picker-note');
+  const listEl=document.getElementById('gift-picker-list');
+  if(!title||!note||!listEl) return;
+  const isRecipient=giftMemberPickerMode==='recipient';
+  const items=isRecipient?getBirthdayMembersThisMonth():getGiftableMembers();
+  const currentId=isRecipient?selectedGiftRecipientId:selectedGiftGiverId;
+  title.innerHTML=`<i data-lucide="${isRecipient?'cake':'user-round-check'}"></i>${isRecipient?'Chọn người nhận sinh nhật':'Chọn người tặng'}`;
+  note.textContent=isRecipient?'Chỉ hiện thành viên có sinh nhật trong tháng này.':'Chọn đúng tên của bạn để xác nhận bằng mã PIN cá nhân.';
+  listEl.innerHTML=items.map(m=>`
+    <button type="button" class="gift-picker-option ${m.id===currentId?'on':''}" onclick='chooseGiftMemberFromPicker(${jsArg(m.id)})'>
+      <span class="gift-picker-option-name">${escapeHTML(m.name)}</span>
+      <span class="gift-picker-option-meta">${isRecipient?formatBirthdayShort(m.birthday):(m.id===currentId?'Đang chọn':'Chọn')}</span>
+    </button>`).join('');
+  refreshIcons();
+}
+function chooseGiftMemberFromPicker(id){
+  if(giftMemberPickerMode==='recipient') selectedGiftRecipientId=id||'';
+  else{
+    selectedGiftGiverId=id||'';
+    try{ localStorage.setItem('clb_last_gift_giver',selectedGiftGiverId); }catch(e){}
+  }
+  closeOv('ov-gift-member-picker');
+  renderBirthdayGiftModalBody();
+}
 function syncBirthdayGiftSelectionState(recipients,givers){
   const todayRecipient=recipients.find(m=>isBirthdayToday(m.birthday));
   if(!selectedGiftRecipientId||!recipients.some(m=>m.id===selectedGiftRecipientId)){
@@ -6411,6 +6538,8 @@ function renderBirthdayGiftModalBody(){
   const toVal=selectedGiftRecipientId;
   const fromVal=selectedGiftGiverId;
   const selectedGift=getSelectedBirthdayGift();
+  const selectedRecipient=getMemberById(toVal);
+  const selectedGiver=getMemberById(fromVal);
   el.innerHTML=`
     <div class="gift-pin-modal-body">
       <div class="gift-modal-note">Tiền sẽ trừ từ người tặng và cộng vào Birthday Vault.</div>
@@ -6427,22 +6556,19 @@ function renderBirthdayGiftModalBody(){
       <div class="gift-select-grid">
         <div>
           <label>Người nhận sinh nhật</label>
-          <div class="gift-member-options gift-recipient-options" id="gift-modal-to-options">
-            ${recipients.map(m=>`
-              <button type="button" class="gift-member-option ${m.id===toVal?'on':''}" onclick='selectBirthdayGiftRecipient(${jsArg(m.id)})'>
-                <span class="gift-member-name">${escapeHTML(m.name)}</span>
-                <span class="gift-member-sub">${formatBirthdayShort(m.birthday)}</span>
-              </button>`).join('')}
-          </div>
+          <button type="button" class="gift-picker-trigger" onclick="openGiftMemberPicker('recipient')">
+            <strong>${escapeHTML(selectedRecipient?.name||'Chọn người nhận')}</strong>
+            <span>${selectedRecipient?formatBirthdayShort(selectedRecipient.birthday):'Đổi'}</span>
+            <i data-lucide="chevron-right"></i>
+          </button>
         </div>
         <div>
           <label>Người tặng</label>
-          <div class="gift-member-options gift-giver-options" id="gift-modal-from-options">
-            ${givers.map(m=>`
-              <button type="button" class="gift-member-option ${m.id===fromVal?'on':''}" onclick='selectBirthdayGiftGiver(${jsArg(m.id)})'>
-                <span class="gift-member-name">${escapeHTML(m.name)}</span>
-              </button>`).join('')}
-          </div>
+          <button type="button" class="gift-picker-trigger" onclick="openGiftMemberPicker('giver')">
+            <strong>${escapeHTML(selectedGiver?.name||'Chọn người tặng')}</strong>
+            <span>Đổi</span>
+            <i data-lucide="chevron-right"></i>
+          </button>
         </div>
       </div>
       <div class="gift-modal-actions"><button type="button" class="btn gift-submit" onclick="startBirthdayGift()"><i data-lucide="gift"></i> Gửi ${escapeHTML(selectedGift.name)}</button></div>
